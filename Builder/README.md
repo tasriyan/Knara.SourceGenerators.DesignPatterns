@@ -268,7 +268,7 @@ This project follows modern C# development practices:
 
 ## License
 
-[Add your license information here]
+Apache License 2.0
 
 ## Changelog
 
@@ -277,4 +277,4 @@ This project follows modern C# development practices:
 - Support for classes and records
 - Collection handling
 - Property validation
-- High-performance incremental generation
+- Incremental generation
