@@ -1,4 +1,6 @@
-﻿namespace Demo.Decorator.ConsoleApp.SampleServices
+﻿using Demo.Generator;
+
+namespace Demo.Decorator.ConsoleApp.SampleServices
 {
 	// Example 3: Data Repository with caching and performance monitoring
 	[GenerateDecorators(BaseName = "Repository", Accessibility = DecoratorAccessibility.Internal)]

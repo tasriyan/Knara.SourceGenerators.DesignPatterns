@@ -15,7 +15,26 @@
   </ItemGroup>
   
     <ItemGroup>
-      <ProjectReference Include="..\..\SourceGenerators.DesignPatterns.Decorator\SourceGenerators.DesignPatterns.Decorator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.7" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7" />
+      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.7" />
+      <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.7" />
+    </ItemGroup>
+  
+    <ItemGroup>
+      <ProjectReference Include="..\..\SourceGenerators.DesignPatterns.Decorator\SourceGenerators.DesignPatterns.Decorator.csproj"
+                        OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+  
+    <ItemGroup>
+      <Compile Remove="SampleServices\IDataRepository.cs" />
+      <None Include="SampleServices\IDataRepository.cs" />
+    </ItemGroup>
+  
+    <ItemGroup>
+      <Compile Remove="SampleServices\IPaymentService.cs" />
+      <Page Include="SampleServices\IPaymentService.cs" />
     </ItemGroup>
 
 </Project>

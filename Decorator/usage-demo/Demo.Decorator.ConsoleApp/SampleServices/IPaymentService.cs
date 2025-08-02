@@ -1,4 +1,6 @@
-﻿namespace Demo.Decorator.ConsoleApp.SampleServices;
+﻿using Demo.Generator;
+
+namespace Demo.Decorator.ConsoleApp.SampleServices;
 
 public class PaymentRequest
 {
