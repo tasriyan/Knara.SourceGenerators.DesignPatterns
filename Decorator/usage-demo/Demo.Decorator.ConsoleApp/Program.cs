@@ -2,8 +2,6 @@
 
 using Demo.Decorator.ConsoleApp;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Console;
-using Microsoft.Extensions.Options;
 
 var loggerFactory = LoggerFactory.Create(builder =>
 {

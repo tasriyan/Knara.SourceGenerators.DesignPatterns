@@ -1,6 +1,6 @@
 using System;
 
-namespace SourceGenerators.DesignPatterns.Decorator;
+namespace CodeGenerator.Patterns.Decorator;
 
 /// <summary>
 /// Marks an interface for decorator factory generation.

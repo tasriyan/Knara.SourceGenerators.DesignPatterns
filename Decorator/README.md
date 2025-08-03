@@ -1,125 +1,176 @@
-# Decorator Pattern Source Generator
+# Decorator Pattern Factory Generator
 
-A C# source generator that automatically creates decorator classes for cross-cutting concerns like logging, caching, validation, retry logic, and performance monitoring.
+A C# source generator that automatically creates fluent factory methods for the Decorator design pattern.
+## Features
 
-## Why Use This?
+- **Automatic Factory Generation**: Creates fluent factory classes for interfaces marked with `[GenerateDecoratorFactory]`
+- **Type-Safe Decorator Chaining**: Compile-time safety with IntelliSense support
+- **Flexible Constructor Injection**: Supports decorators with varying constructor parameters
+- **Clean Fluent API**: Method chaining for readable decorator composition
 
-**Manual Decorator Problems:**
-- Tons of boilerplate forwarding methods
-- Easy to forget implementing new interface methods  
-- Inconsistent decorator implementations
-- Runtime reflection overhead
+## Installation
+```bash
+<PackageReference Include="CodeGenerator.Patterns.Decorator" Version="1.0.0" />
+```
 
-**Source Generation Benefits:**
-- ✅ Zero boilerplate - generates all forwarding automatically
-- ✅ Compile-time safety - catches missing methods immediately
-- ✅ Perfect IntelliSense support
-- ✅ Zero runtime overhead
-- ✅ Consistent, tested implementations
+## Quick Start
 
-## Usage
+### 1. Mark Your Interface
 
-Mark your interface with `[GenerateDecorators]` and methods with `[Decorator]`:
-
+Add the `[GenerateDecoratorFactory]` attribute to your service interface:
 ```csharp
-[GenerateDecorators(BaseName = "User")]
-public interface IUserService
-{
-    [Decorator(Type = DecoratorType.Logging)]
-    [Decorator(Type = DecoratorType.Caching, CacheExpirationMinutes = 30)]
-    [Decorator(Type = DecoratorType.Performance)]
-    Task<User> GetUserAsync(int id);
-
-    [Decorator(Type = DecoratorType.Validation)]
-    [Decorator(Type = DecoratorType.Retry, RetryAttempts = 3)]
-    Task CreateUserAsync(User user);
+[GenerateDecoratorFactory(BaseName = "User")] 
+public interface IUserService 
+{ 
+	Task<User> GetUserByIdAsync(int userId); 
+	Task<List<User>> GetAllUsersAsync(); 
+	Task CreateUserAsync(User user); 
+	Task UpdateUserAsync(User user); 
+	Task DeleteUserAsync(int userId);
 }
 ```
 
-Use the generated fluent factory:
-
+### 2. Create Your Base Implementation
 ```csharp
-IUserService service = UserDecoratorFactory
-    .Create(new UserService())
-    .WithLogging(logger)
-    .WithCaching(cache)
-    .WithValidation()
-    .WithPerformanceMonitoring(logger);
-
-// Now all calls automatically get:
-// - Logging (entry/exit/errors)
-// - Caching (with 30min expiration)  
-// - Performance monitoring (execution time)
-// - Validation (null checks)
-// - Retry logic (3 attempts with exponential backoff)
-```
-
-## Generated Decorators
-
-| Decorator Type | Purpose | Features |
-|---|---|---|
-| **Logging** | Method tracing | Entry/exit logging, error logging, parameter logging |
-| **Caching** | Result caching | Configurable expiration, cache key generation |
-| **Validation** | Input validation | Null checks, custom validation methods |
-| **Retry** | Fault tolerance | Exponential backoff, configurable attempts |
-| **Performance** | Monitoring | Execution time measurement, performance logging |
-
-## Dependency Injection Integration
-
-```csharp
-services.AddScoped<IUserService>(provider =>
-{
-    var implementation = new UserService();
-    var logger = provider.GetService<ILogger<UserService>>();
-    var cache = provider.GetService<IMemoryCache>();
-
-    return UserDecoratorFactory
-        .Create(implementation)
-        .WithLogging(logger)
-        .WithCaching(cache)
-        .WithValidation()
-        .WithRetry()
-        .WithPerformanceMonitoring(logger);
-});
-```
-
-## Real-World Benefits
-
-**Before (Manual):**
-```csharp
-// 50+ lines of boilerplate per decorator per method
-public class UserLoggingDecorator : IUserService
-{
-    private readonly IUserService _inner;
-    private readonly ILogger _logger;
-    
-    public UserLoggingDecorator(IUserService inner, ILogger logger) { ... }
-    
-    public async Task<User> GetUserAsync(int id)
-    {
-        _logger.LogInformation("Getting user {Id}", id);
-        try
-        {
-            var result = await _inner.GetUserAsync(id);
-            _logger.LogInformation("Successfully got user {Id}", id);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting user {Id}", id);
-            throw;
-        }
-    }
-    
-    // Repeat for every single method... 😫
+public class UserService : IUserService 
+{ 
+	public async Task<User> GetUserByIdAsync(int userId) 
+	{ 
+	// Simulate database call await Task.Delay(100); 
+	return new User { Id = userId, Email = "user@example.com" }; 
+	}
+	// ... other methods
 }
 ```
 
-**After (Generated):**
+### 3. Create Decorators
+
+Each decorator should implement the interface and be marked with `[Decorator]`:
 ```csharp
-[Decorator(Type = DecoratorType.Logging)]
-Task<User> GetUserAsync(int id);
-// Done! 🎉
+[Decorator(Type = "Logging")] 
+public class UserLoggingDecorator : IUserService 
+{
+	private readonly IUserService _inner;
+	private readonly ILogger<IUserService> _logger;
+	public UserLoggingDecorator(IUserService inner, ILogger<IUserService> logger)
+	{
+		_inner = inner;
+		_logger = logger;
+	}
+
+	public async Task<User> GetUserByIdAsync(int userId)
+	{
+		_logger.LogInformation($"Getting user by ID: {userId}");
+		var user = await _inner.GetUserByIdAsync(userId);
+		_logger.LogInformation($"Retrieved user: {user.Email}");
+		return user;
+	}
+
+	// ... other methods
+}
 ```
 
-The generator creates production-ready decorators with proper async support, exception handling, and performance optimizations.
+### 4. Use the Generated Factory
+```csharp
+// Create decorated service using the generated factory 
+IUserService userService = UserDecoratorFactory 
+	.Create(new UserService())
+	.WithValidation() 
+	.WithCaching(cache) 
+	.WithLogging(logger);
+// Use the service normally 
+var user = await userService.GetUserByIdAsync(1);
+```
+
+## Generated Factory Code
+
+For the `IUserService` interface, the generator creates:
+```csharp
+// <auto-generated /> #nullable enable
+namespace Demo.Decorator.ConsoleApp;
+public static class UserDecoratorFactory 
+{ 
+	public static IUserService Create(IUserService implementation) 
+	{ 
+		return implementation; 
+	}
+	public static IUserService WithLogging(this IUserService service, ILogger<IUserService> logger)
+	{
+		return new UserLoggingDecorator(service, logger);
+	}
+
+	public static IUserService WithCaching(this IUserService service, IMemoryCache cache)
+	{
+		return new UserCachingDecorator(service, cache);
+	}
+
+	public static IUserService WithValidation(this IUserService service)
+	{
+		return new UserValidationDecorator(service);
+	}
+
+	public static IUserService WithPerformanceMonitoring(this IUserService service, ILogger<UserPerformanceMonitoringDecorator> logger)
+	{
+		return new UserPerformanceMonitoringDecorator(service, logger);
+	}
+}
+```
+
+### Dependency Injection Integration
+```csharp
+	public static IServiceCollection DependencyInjectionUsage(this IServiceCollection services)
+	{
+		services.AddScoped<IUserService>(provider =>
+		{
+			var implementation = new UserService();
+			var logger = provider.GetRequiredService<ILogger<UserService>>();
+			var performanceLogger = provider.GetRequiredService<ILogger<UserPerformanceMonitoringDecorator>>();
+			var cache = provider.GetRequiredService<IMemoryCache>();
+
+			return UserDecoratorFactory
+				.Create(implementation)
+				.WithValidation()
+				.WithCaching(cache)
+				.WithPerformanceMonitoring(performanceLogger)
+				.WithLogging(logger);
+		});
+		
+		return services;
+	}
+```
+
+## Requirements
+
+- .NET Standard 2.0 or higher
+- C# 8.0 or higher (for source generators)
+- Interface-based service design
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Factory not generated**
+   - Ensure interface has `[GenerateDecoratorFactory]` attribute
+   - Verify interface is public
+   - Check for compilation errors
+
+2. **Extension method not found**
+   - Verify decorator class has `[Decorator(Type = "...")]` attribute
+   - Ensure decorator implements the correct interface
+   - Check constructor parameter order (interface first)
+
+3. **Constructor parameters missing**
+   - Verify constructor parameter types are accessible
+   - Check parameter names match expected conventions
+   - Ensure using statements are correct
+
+### Debugging Tips
+
+1. Enable source generator output to see generated code
+2. Use IDE "Go to Definition" on factory methods
+3. Check build output for source generator warnings
+4. Verify attribute namespaces are correctly imported
+
+## License
+
+Apache License 2.0

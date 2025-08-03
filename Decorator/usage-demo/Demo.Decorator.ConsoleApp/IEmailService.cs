@@ -1,5 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
-using SourceGenerators.DesignPatterns.Decorator;
+﻿using CodeGenerator.Patterns.Decorator;
+using Microsoft.Extensions.Logging;
 
 namespace Demo.Decorator.ConsoleApp;
 

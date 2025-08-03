@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Caching.Memory;
+﻿using CodeGenerator.Patterns.Decorator;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using SourceGenerators.DesignPatterns.Decorator;
 
 namespace Demo.Decorator.ConsoleApp;
 
-// Example 1: User Service with bunch of decorators
+// Example 1: User Service with a bunch of decorators
 
 public class User
 {

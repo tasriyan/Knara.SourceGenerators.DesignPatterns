@@ -1,20 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-      <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-      <CompilerGeneratedFilesOutputPath>Generated\$(TargetFramework)</CompilerGeneratedFilesOutputPath>
-    </PropertyGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>Generated\$(TargetFramework)</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs"></Compile>
     <Folder Include="Generated\**" />
   </ItemGroup>
-  
-    <ItemGroup>
+
+
+  <ItemGroup>
       <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.7" />
       <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7" />
@@ -23,18 +25,16 @@
     </ItemGroup>
   
     <ItemGroup>
-      <ProjectReference Include="..\..\SourceGenerators.DesignPatterns.Decorator\SourceGenerators.DesignPatterns.Decorator.csproj"
-                        OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    </ItemGroup>
-  
-    <ItemGroup>
       <Compile Remove="SampleServices\IDataRepository.cs" />
-      <None Include="SampleServices\IDataRepository.cs" />
     </ItemGroup>
   
     <ItemGroup>
       <Compile Remove="SampleServices\IPaymentService.cs" />
-      <Page Include="SampleServices\IPaymentService.cs" />
+    </ItemGroup>
+  
+    <ItemGroup>
+      <ProjectReference Include="..\..\CodeGenerator.Patterns.Decorator\CodeGenerator.Patterns.Decorator.csproj" 
+        OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
     </ItemGroup>
 
 </Project>
