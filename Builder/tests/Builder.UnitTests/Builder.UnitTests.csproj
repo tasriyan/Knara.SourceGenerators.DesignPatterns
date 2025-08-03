@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\SourceGenerators.DesignPatterns.Builder\SourceGenerators.DesignPatterns.Builder.csproj" />
+      <ProjectReference Include="..\..\CodeGenerator.Patterns.Builder\CodeGenerator.Patterns.Builder.csproj" />
     </ItemGroup>
 
 </Project>

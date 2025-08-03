@@ -1,4 +1,4 @@
-﻿namespace SourceGenerators.DesignPatterns.Builder;
+﻿namespace CodeGenerator.Patterns.Builder;
 
 public class GenerateBuilderAttribute
 {

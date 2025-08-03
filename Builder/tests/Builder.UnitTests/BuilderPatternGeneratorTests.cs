@@ -1,7 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using CodeGenerator.Patterns.Builder;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace SourceGenerators.DesignPatterns.Builder.Tests;
+namespace BuilderUnitTests;
 
 public class BuilderPatternGeneratorTests
 {
@@ -48,7 +49,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder]
             public class Person
@@ -85,7 +86,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder]
             public class User
@@ -123,7 +124,7 @@ public class BuilderPatternGeneratorTests
         // Arrange
         var source = """
             using System.Collections.Generic;
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder]
             public class Order
@@ -158,7 +159,7 @@ public class BuilderPatternGeneratorTests
         // Arrange
         var source = """
             using System.Collections.Generic;
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder]
             public class Configuration
@@ -192,7 +193,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder(BuilderName = "CustomPersonBuilder")]
             public class Person
@@ -222,7 +223,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder(GenerateFromMethod = true)]
             public class Product
@@ -254,7 +255,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder(GenerateFromMethod = true)]
             public class Product
@@ -285,7 +286,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder]
             public class Person
@@ -316,7 +317,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder]
             public class Person
@@ -350,7 +351,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder(Accessibility = BuilderAccessibility.Internal)]
             public class Person
@@ -379,7 +380,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using SourceGenerators.DesignPatterns.Builder;
+            using CodeGenerator.Patterns.Builder;
 
             [GenerateBuilder]
             public class ImmutablePerson
@@ -440,7 +441,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-                     using SourceGenerators.DesignPatterns.Builder;
+                     using CodeGenerator.Patterns.Builder;
 
                      [GenerateBuilder(ValidateOnBuild = false)]
                      public class Person

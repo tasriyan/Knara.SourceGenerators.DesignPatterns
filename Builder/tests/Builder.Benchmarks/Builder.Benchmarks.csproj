@@ -11,9 +11,9 @@
         <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     </ItemGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\..\SourceGenerators.DesignPatterns.Builder\SourceGenerators.DesignPatterns.Builder.csproj" />
+      <ProjectReference Include="..\..\CodeGenerator.Patterns.Builder\CodeGenerator.Patterns.Builder.csproj" />
     </ItemGroup>
 
 </Project>

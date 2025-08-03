@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace SourceGenerators.DesignPatterns.Builder;
+namespace CodeGenerator.Patterns.Builder;
 
 public class TypeToGenerate
 {

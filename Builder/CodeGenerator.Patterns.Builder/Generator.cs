@@ -5,16 +5,16 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace SourceGenerators.DesignPatterns.Builder;
+namespace CodeGenerator.Patterns.Builder;
 
 [Generator]
 public class BuilderPatternGenerator : IIncrementalGenerator
 {
-    private const string NamespaceSource = "SourceGenerators.DesignPatterns.Builder";
+    private const string NamespaceSource = "CodeGenerator.Patterns.Builder";
     private const string AttributesSource = """
         using System;
 
-        namespace SourceGenerators.DesignPatterns.Builder;
+        namespace CodeGenerator.Patterns.Builder;
 
         [AttributeUsage(AttributeTargets.Class)]
         public class GenerateBuilderAttribute : Attribute
@@ -203,11 +203,11 @@ public class BuilderPatternGenerator : IIncrementalGenerator
 
         // Only treat as collection if implements IEnumerable and is not string or dictionary
         return type.AllInterfaces.Any(i =>
-            (i.Name == "IEnumerable" ||
+            i.Name == "IEnumerable" ||
              i.Name == "ICollection" ||
              i.Name == "IList" ||
              i.Name == "IReadOnlyCollection" ||
-             i.Name == "IReadOnlyList")
+             i.Name == "IReadOnlyList"
         ) && type.SpecialType != SpecialType.System_String;
     }
 

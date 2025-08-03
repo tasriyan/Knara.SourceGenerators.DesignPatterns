@@ -1,4 +1,4 @@
-﻿using SourceGenerators.DesignPatterns.Builder;
+﻿using CodeGenerator.Patterns.Builder;
 
 namespace Demo.Builder.ConsoleApp.SampleModels;
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace SourceGenerators.DesignPatterns.Builder;
+namespace CodeGenerator.Patterns.Builder;
 
 public static class BuilderDiagnostics
 {

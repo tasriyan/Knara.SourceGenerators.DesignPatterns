@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SourceGenerators.DesignPatterns.Builder;
+namespace CodeGenerator.Patterns.Builder;
 
 [AttributeUsage(AttributeTargets.Class)]
 public class GenerateBuilderAttribute : Attribute
