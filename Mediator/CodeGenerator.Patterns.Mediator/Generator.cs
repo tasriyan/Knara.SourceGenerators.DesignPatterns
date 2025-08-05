@@ -33,12 +33,6 @@ namespace CodeGenerator.Patterns.Mediator
     }
 
     [AttributeUsage(AttributeTargets.Class)]
-    public class NotificationAttribute : Attribute
-    {
-        public string Name { get; set; } = """";
-    }
-
-    [AttributeUsage(AttributeTargets.Class)]
     public class StreamQueryAttribute : Attribute
     {
         public string Name { get; set; } = """";
@@ -79,7 +73,6 @@ namespace CodeGenerator.Patterns.Mediator
     public interface IQuery<out TResponse> { }
     public interface ICommand { }
     public interface ICommand<out TResponse> { }
-    public interface INotification { }
     public interface IStreamQuery<out TResponse> { }
 
     public interface IQueryHandler<in TQuery, TResponse> where TQuery : IQuery<TResponse>
@@ -97,11 +90,6 @@ namespace CodeGenerator.Patterns.Mediator
         Task<TResponse> Handle(TCommand command, CancellationToken cancellationToken = default);
     }
 
-    public interface INotificationHandler<in TNotification> where TNotification : INotification
-    {
-        Task Handle(TNotification notification, CancellationToken cancellationToken = default);
-    }
-
     public interface IStreamQueryHandler<in TQuery, TResponse> where TQuery : IStreamQuery<TResponse>
     {
 	    IAsyncEnumerable<TResponse> Handle(TQuery query, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default);
@@ -112,7 +100,7 @@ namespace CodeGenerator.Patterns.Mediator
         Task<TResponse> Send<TResponse>(IQuery<TResponse> query, CancellationToken cancellationToken = default);
         Task Send(ICommand command, CancellationToken cancellationToken = default);
         Task<TResponse> Send<TResponse>(ICommand<TResponse> command, CancellationToken cancellationToken = default);
-        Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification;
+        Task Publish<TEvent>(TEvent eventObj, CancellationToken cancellationToken = default);
         IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamQuery<TResponse> query, CancellationToken cancellationToken = default);
     }
 }";
@@ -125,14 +113,14 @@ namespace CodeGenerator.Patterns.Mediator
             ctx.AddSource("MediatorAttributes.g.cs", SourceText.From(MediatorAttributes, Encoding.UTF8));
         });
 
-        // Get request classes (Query, Command, Notification)
+        // Get request classes (Query, Command, StreamQuery)
         var requestClasses = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsRequestClass(s),
                 transform: static (ctx, _) => GetRequestInfo(ctx))
             .Where(static m => m is not null);
 
-        // Get handler classes (QueryHandler, CommandHandler, NotificationHandler)
+        // Get handler classes (QueryHandler, CommandHandler, NotificationHandler, StreamQueryHandler)
         var handlerClasses = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsHandlerClass(s),
@@ -192,13 +180,6 @@ namespace CodeGenerator.Patterns.Mediator
             var name = GetAttributeStringValue(commandAttr, "Name");
             var responseType = GetAttributeTypeValue(commandAttr, "ResponseType");
             return new RequestInfo(symbol.Name, name, RequestType.Command, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
-        }
-
-        var notificationAttr = GetAttribute(symbol, "NotificationAttribute");
-        if (notificationAttr != null)
-        {
-            var name = GetAttributeStringValue(notificationAttr, "Name");
-            return new RequestInfo(symbol.Name, name, RequestType.Notification, null, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
         }
 
         var streamQueryAttr = GetAttribute(symbol, "StreamQueryAttribute");
@@ -482,7 +463,6 @@ namespace CodeGenerator.Patterns.Mediator
             RequestType.Query => $"IQuery<{request.ResponseType ?? "object"}>",
             RequestType.Command when !string.IsNullOrEmpty(request.ResponseType) => $"ICommand<{request.ResponseType}>",
             RequestType.Command => "ICommand",
-            RequestType.Notification => "INotification",
             RequestType.StreamQuery => $"IStreamQuery<{request.ResponseType ?? "object"}>",
             _ => "object"
         };
@@ -524,6 +504,12 @@ namespace CodeGenerator.Patterns.Mediator
             sb.AppendLine();
         }
 
+        // For notification handlers, generate simple handlers that work directly with events
+        if (handler.Type == HandlerType.Notification)
+        {
+            return GenerateNotificationHandler(handler);
+        }
+
         // Find the corresponding request - use the NAME from the attribute, not the original class name
         var request = requests.FirstOrDefault(r => r.Name == handler.RequestType);
         if (request == null) return "";
@@ -534,18 +520,21 @@ namespace CodeGenerator.Patterns.Mediator
             HandlerType.Query => $"IQueryHandler<{request.Name}, {request.ResponseType ?? "object"}>",
             HandlerType.Command when !string.IsNullOrEmpty(request.ResponseType) => $"ICommandHandler<{request.Name}, {request.ResponseType}>",
             HandlerType.Command => $"ICommandHandler<{request.Name}>",
-            HandlerType.Notification => $"INotificationHandler<{request.Name}>",
             HandlerType.StreamQuery => $"IStreamQueryHandler<{request.Name}, {request.ResponseType ?? "object"}>",
             _ => "object"
         };
 
+        var serviceFullName = !string.IsNullOrEmpty(handler.Namespace) 
+            ? $"{handler.Namespace}.{handler.ServiceClassName}"
+            : handler.ServiceClassName;
+
         sb.AppendLine($"// Generated mediator handler for {handler.ServiceClassName}");
         sb.AppendLine($"public class {handler.HandlerName} : {interfaceName}");
         sb.AppendLine("{");
-        sb.AppendLine($"    private readonly {handler.ServiceClassName} _service;");
+        sb.AppendLine($"    private readonly {serviceFullName} _service;");
         
         sb.AppendLine();
-        sb.AppendLine($"    public {handler.HandlerName}({handler.ServiceClassName} service)");
+        sb.AppendLine($"    public {handler.HandlerName}({serviceFullName} service)");
         sb.AppendLine("    {");
         sb.AppendLine("        _service = service;");
         sb.AppendLine("    }");
@@ -564,7 +553,6 @@ namespace CodeGenerator.Patterns.Mediator
         {
             RequestType.Query => "query",
             RequestType.Command => "command", 
-            RequestType.Notification => "notification",
             RequestType.StreamQuery => "query",
             _ => "request"
         };
@@ -621,6 +609,57 @@ namespace CodeGenerator.Patterns.Mediator
             {
                 sb.AppendLine($"        await _service.{handler.Method}(originalRequest, cancellationToken);");
             }
+        }
+        else
+        {
+            sb.AppendLine("        // TODO: Implement handler logic");
+            sb.AppendLine("        throw new System.NotImplementedException();");
+        }
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+
+        return sb.ToString();
+    }
+
+    private static string GenerateNotificationHandler(HandlerInfo handler)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("// <auto-generated />");
+        sb.AppendLine("#nullable enable");
+        sb.AppendLine("using System.Threading;");
+        sb.AppendLine("using System.Threading.Tasks;");
+        sb.AppendLine();
+
+        if (!string.IsNullOrEmpty(handler.Namespace))
+        {
+            sb.AppendLine($"namespace {handler.Namespace};");
+            sb.AppendLine();
+        }
+
+        // Use the full type name with namespace for both event and service
+        var eventTypeFullName = handler.RequestType ?? "object";
+        var serviceFullName = !string.IsNullOrEmpty(handler.Namespace) 
+            ? $"{handler.Namespace}.{handler.ServiceClassName}"
+            : handler.ServiceClassName;
+        
+        sb.AppendLine($"// Generated notification handler for {handler.ServiceClassName}");
+        sb.AppendLine($"public class {handler.HandlerName}");
+        sb.AppendLine("{");
+        sb.AppendLine($"    private readonly {serviceFullName} _service;");
+        sb.AppendLine();
+        sb.AppendLine($"    public {handler.HandlerName}({serviceFullName} service)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        _service = service;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine($"    public async Task Handle({eventTypeFullName} eventObj, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+
+        if (handler.Method != null)
+        {
+            sb.AppendLine($"        await _service.{handler.Method}(eventObj, cancellationToken);");
         }
         else
         {
@@ -698,7 +737,11 @@ namespace CodeGenerator.Patterns.Mediator
             var handler = handlers.FirstOrDefault(h => h.RequestType == request.Name);
             if (handler != null)
             {
-                sb.AppendLine($"            {request.Name} typedQuery => (TResponse)(object)await _serviceProvider.GetRequiredService<{handler.HandlerName}>().Handle(typedQuery, cancellationToken),");
+                var handlerFullName = !string.IsNullOrEmpty(handler.Namespace)
+                    ? $"{handler.Namespace}.{handler.HandlerName}"
+                    : handler.HandlerName;
+                    
+                sb.AppendLine($"            {request.Name} typedQuery => (TResponse)(object)await _serviceProvider.GetRequiredService<{handlerFullName}>().Handle(typedQuery, cancellationToken),");
             }
         }
 
@@ -721,8 +764,12 @@ namespace CodeGenerator.Patterns.Mediator
             var handler = handlers.FirstOrDefault(h => h.RequestType == request.Name);
             if (handler != null)
             {
+                var handlerFullName = !string.IsNullOrEmpty(handler.Namespace)
+                    ? $"{handler.Namespace}.{handler.HandlerName}"
+                    : handler.HandlerName;
+                    
                 sb.AppendLine($"            case {request.Name} typedCommand:");
-                sb.AppendLine($"                await _serviceProvider.GetRequiredService<{handler.HandlerName}>().Handle(typedCommand, cancellationToken);");
+                sb.AppendLine($"                await _serviceProvider.GetRequiredService<{handlerFullName}>().Handle(typedCommand, cancellationToken);");
                 sb.AppendLine("                break;");
             }
         }
@@ -747,7 +794,11 @@ namespace CodeGenerator.Patterns.Mediator
             var handler = handlers.FirstOrDefault(h => h.RequestType == request.Name);
             if (handler != null)
             {
-                sb.AppendLine($"            {request.Name} typedCommand => (TResponse)(object)await _serviceProvider.GetRequiredService<{handler.HandlerName}>().Handle(typedCommand, cancellationToken),");
+                var handlerFullName = !string.IsNullOrEmpty(handler.Namespace)
+                    ? $"{handler.Namespace}.{handler.HandlerName}"
+                    : handler.HandlerName;
+                    
+                sb.AppendLine($"            {request.Name} typedCommand => (TResponse)(object)await _serviceProvider.GetRequiredService<{handlerFullName}>().Handle(typedCommand, cancellationToken),");
             }
         }
 
@@ -759,31 +810,28 @@ namespace CodeGenerator.Patterns.Mediator
 
     private static void GeneratePublishMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
-        sb.AppendLine("    public async Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification");
+        sb.AppendLine("    public async Task Publish<TEvent>(TEvent eventObj, CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
-        sb.AppendLine("        var tasks = notification switch");
-        sb.AppendLine("        {");
+        sb.AppendLine("        var eventType = typeof(TEvent);");
+        sb.AppendLine("        var tasks = new List<Task>();");
+        sb.AppendLine();
 
-        var notificationRequests = requests.Where(r => r.Type == RequestType.Notification).ToList();
-        foreach (var request in notificationRequests)
+        var notificationHandlers = handlers.Where(h => h.Type == HandlerType.Notification).ToList();
+        
+        foreach (var handler in notificationHandlers)
         {
-            var matchingHandlers = handlers.Where(h => h.RequestType == request.Name).ToList();
-            if (matchingHandlers.Any())
-            {
-                sb.AppendLine($"            {request.Name} typedNotification => new Task[]");
-                sb.AppendLine("            {");
-                foreach (var handler in matchingHandlers)
-                {
-                    sb.AppendLine($"                _serviceProvider.GetRequiredService<{handler.HandlerName}>().Handle(typedNotification, cancellationToken),");
-                }
-                sb.AppendLine("            },");
-            }
+            var eventTypeFullName = handler.RequestType ?? "object";
+            var eventTypeName = eventTypeFullName.Split('.').Last();
+            
+            sb.AppendLine($"        // Handler: {handler.HandlerName} for {eventTypeFullName}");
+            sb.AppendLine($"        if (typeof({eventTypeFullName}).IsAssignableFrom(eventType))");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            tasks.Add(_serviceProvider.GetRequiredService<{handler.Namespace}.{handler.HandlerName}>().Handle(({eventTypeFullName})(object)eventObj!, cancellationToken));");
+            sb.AppendLine("        }");
+            sb.AppendLine();
         }
 
-        sb.AppendLine("            _ => Array.Empty<Task>()");
-        sb.AppendLine("        };");
-        sb.AppendLine();
-        sb.AppendLine("        if (tasks.Length > 0)");
+        sb.AppendLine("        if (tasks.Count > 0)");
         sb.AppendLine("        {");
         sb.AppendLine("            await Task.WhenAll(tasks);");
         sb.AppendLine("        }");
@@ -804,7 +852,11 @@ namespace CodeGenerator.Patterns.Mediator
             var handler = handlers.FirstOrDefault(h => h.RequestType == request.Name && h.Type == HandlerType.StreamQuery);
             if (handler != null)
             {
-                sb.AppendLine($"            {request.Name} typedQuery => (IAsyncEnumerable<TResponse>)_serviceProvider.GetRequiredService<{handler.HandlerName}>().Handle(typedQuery, cancellationToken),");
+                var handlerFullName = !string.IsNullOrEmpty(handler.Namespace)
+                    ? $"{handler.Namespace}.{handler.HandlerName}"
+                    : handler.HandlerName;
+                    
+                sb.AppendLine($"            {request.Name} typedQuery => (IAsyncEnumerable<TResponse>)_serviceProvider.GetRequiredService<{handlerFullName}>().Handle(typedQuery, cancellationToken),");
             }
         }
 
@@ -838,8 +890,16 @@ namespace CodeGenerator.Patterns.Mediator
         // Register all handlers and their services
         foreach (var handler in handlers)
         {
-            sb.AppendLine($"        services.AddScoped<{handler.ServiceClassName}>();");
-            sb.AppendLine($"        services.AddScoped<{handler.HandlerName}>();");
+            var serviceFullName = !string.IsNullOrEmpty(handler.Namespace) 
+                ? $"{handler.Namespace}.{handler.ServiceClassName}"
+                : handler.ServiceClassName;
+                
+            var handlerFullName = !string.IsNullOrEmpty(handler.Namespace)
+                ? $"{handler.Namespace}.{handler.HandlerName}"
+                : handler.HandlerName;
+                
+            sb.AppendLine($"        services.AddScoped<{serviceFullName}>();");
+            sb.AppendLine($"        services.AddScoped<{handlerFullName}>();");
         }
 
         sb.AppendLine();

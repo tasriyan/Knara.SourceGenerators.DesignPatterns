@@ -32,8 +32,4 @@
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Remove="VerticalSlices\GetUsersStreamFeature.cs" />
-  </ItemGroup>
-
 </Project>

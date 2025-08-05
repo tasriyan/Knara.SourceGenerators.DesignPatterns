@@ -1,7 +1,7 @@
-﻿using Demo.Mediator.ConsoleApp.VerticalSlices;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using CodeGenerator.Patterns.Mediator;
-using Demo.Mediator.ConsoleApp.Core;
+using Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures;
+using Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures.Core;
 using Microsoft.Extensions.Logging;
 
 var services = ServiceCollectionExtensions.RegisterServices();
@@ -50,37 +50,63 @@ public class MediatorUsageDemo(IMediator mediator)
 		
 		// 1. Command - Fire and forget
 		Console.WriteLine("\n[1] Command Example:");
-		await mediator.Send(new CreateUserCommand
+		var success =await mediator.Send(new CreateUserCommand
 			{
-			UserId = userId,
-			Email = "john@example.com",
-			FirstName = "John",
-			LastName = "Doe"
+				UserId = userId,
+				Email = "arabella@example.com",
+				FirstName = "Arabella",
+				LastName = "Smith"
 		});
+		// 2. Notifications - publish/subscribe
+		if (success)
+		{
+			Console.WriteLine($"User created successfully with ID: {userId}");
+			
+			// Publish domain event 
+			await mediator.Publish(new UserCreatedEvent
+			{ 
+				UserId = userId,
+				Timestamp = DateTime.UtcNow 
+			});
+		}
+		else
+		{
+			Console.WriteLine($"Failed to create user with ID: {userId}");
+		}
 		
-		// 2. Query - Request/Response
+		// 3. Query - Request/Response
 		Console.WriteLine("\n[2] Query Example:");
 		var user = await mediator.Send(new GetUserQuery {
 			UserId = userId
 			});
 
-		// 3. Command with result
+		// 4. Command with result
 		Console.WriteLine("\n[3] Command with Result:");
 		var updatedUser = await mediator.Send(new UpdateUserCommand
 			{
 			UserId = userId,
-			Email = "john.doe@example.com",
-			FirstName = "John"
+			Email = "arabella.smith@example.com",
+			FirstName = "Bella"
 		});
-		// 4. Performance-critical query
-		Console.WriteLine("\n[4] Performance Query:");
+		if (updatedUser != null)
+		{
+			Console.WriteLine($"User updated successfully: {updatedUser.FirstName} {updatedUser.LastName} ({updatedUser.Email})");
+		}
+		else
+		{
+			Console.WriteLine($"Failed to update user with ID: {userId}");
+		}
+		
+		// 5. Analytics query
+		Console.WriteLine("\n[4] Analytics Query:");
+		var createdAfter = DateTime.Now.AddDays(-3);
 		var userCount = await mediator.Send(new GetUserCountQuery 
 		{ 
-			CreatedAfter =DateTime.Now.AddSeconds(-10)
+			CreatedAfter = createdAfter
 		});
-		Console.WriteLine($"Total users: {userCount}");
+		Console.WriteLine($"Total users created after {createdAfter}: {userCount}");
 
-		// 5. Cancellation support
+		// 6. Cancellation support
 		Console.WriteLine("\n[5] Cancellation Example:");
 		using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
 		try
@@ -94,21 +120,17 @@ public class MediatorUsageDemo(IMediator mediator)
 		{
 			Console.WriteLine("Operation was cancelled");
 		}
-		// 6. Notification - One-to-many
-		// Console.WriteLine("\n4️⃣ Notification Example:");
-		// await _mediator.Publish(new UserCreatedEvent { UserId = 456 });
-		// Console.WriteLine("Notification published to all handlers");
-
+		
 		// 7. Streaming query
-		// Console.WriteLine("\n5️⃣ Streaming Query:");
-		// await foreach (var streamUser in _mediator.CreateStream(new GetUsersStreamQuery
-		// {
-		// 	EmailFilter = "@example.com",
-		// 	PageSize = 50
-		// }))
-		// {
-		// 	Console.WriteLine($"Streaming user: {streamUser.Email}");
-		// }
+		Console.WriteLine("\n[6] Streaming Query:");
+		await foreach (var streamUser in mediator.CreateStream(new UsersStreamQuery
+	       {
+	           EmailFilter = "@example.com",
+	           BufferSize = 2
+	       }))
+		{
+			Console.WriteLine($"Streaming user: {streamUser.Email}");
+		}
 	}
 }
 

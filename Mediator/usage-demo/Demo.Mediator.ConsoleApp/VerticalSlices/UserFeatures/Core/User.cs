@@ -1,4 +1,4 @@
-﻿namespace Demo.Mediator.ConsoleApp.Core;
+﻿namespace Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures.Core;
 
 public class User
 {
@@ -18,6 +18,18 @@ public class User
 			CreatedAt = DateTime.MinValue,
 			UpdatedAt = null
 		};
+}
+
+public interface IUserEvent
+{
+	int UserId { get; }
+	DateTime Timestamp { get; }
+}
+
+public class UserCreatedEvent : IUserEvent
+{
+	public int UserId { get; set; }
+	public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
 
 public class UserNotFoundException(int userId) : Exception($"User with ID {userId} not found");
