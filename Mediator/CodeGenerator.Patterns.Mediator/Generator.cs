@@ -1,8 +1,8 @@
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
@@ -38,6 +38,13 @@ namespace CodeGenerator.Patterns.Mediator
         public string Name { get; set; } = """";
     }
 
+    [AttributeUsage(AttributeTargets.Class)]
+    public class StreamQueryAttribute : Attribute
+    {
+        public string Name { get; set; } = """";
+        public Type? ResponseType { get; set; }
+    }
+
     // Handler pattern attributes
     [AttributeUsage(AttributeTargets.Class)]
     public class QueryHandlerAttribute : Attribute
@@ -61,11 +68,19 @@ namespace CodeGenerator.Patterns.Mediator
         public Type? EventType { get; set; }
     }
 
+    [AttributeUsage(AttributeTargets.Class)]
+    public class StreamQueryHandlerAttribute : Attribute
+    {
+        public string Name { get; set; } = """";
+        public Type? RequestType { get; set; }
+    }
+
     // Base interfaces for mediator pattern
     public interface IQuery<out TResponse> { }
     public interface ICommand { }
     public interface ICommand<out TResponse> { }
     public interface INotification { }
+    public interface IStreamQuery<out TResponse> { }
 
     public interface IQueryHandler<in TQuery, TResponse> where TQuery : IQuery<TResponse>
     {
@@ -87,12 +102,18 @@ namespace CodeGenerator.Patterns.Mediator
         Task Handle(TNotification notification, CancellationToken cancellationToken = default);
     }
 
+    public interface IStreamQueryHandler<in TQuery, TResponse> where TQuery : IStreamQuery<TResponse>
+    {
+	    IAsyncEnumerable<TResponse> Handle(TQuery query, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default);
+    }
+
     public interface IMediator
     {
         Task<TResponse> Send<TResponse>(IQuery<TResponse> query, CancellationToken cancellationToken = default);
         Task Send(ICommand command, CancellationToken cancellationToken = default);
         Task<TResponse> Send<TResponse>(ICommand<TResponse> command, CancellationToken cancellationToken = default);
         Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default) where TNotification : INotification;
+        IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamQuery<TResponse> query, CancellationToken cancellationToken = default);
     }
 }";
 
@@ -180,6 +201,14 @@ namespace CodeGenerator.Patterns.Mediator
             return new RequestInfo(symbol.Name, name, RequestType.Notification, null, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
         }
 
+        var streamQueryAttr = GetAttribute(symbol, "StreamQueryAttribute");
+        if (streamQueryAttr != null)
+        {
+            var name = GetAttributeStringValue(streamQueryAttr, "Name");
+            var responseType = GetAttributeTypeValue(streamQueryAttr, "ResponseType");
+            return new RequestInfo(symbol.Name, name, RequestType.StreamQuery, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+        }
+
         return null;
     }
 
@@ -197,7 +226,7 @@ namespace CodeGenerator.Patterns.Mediator
                 {
                     var typeName = parameter.Type.ToDisplayString();
                     var propertyName = char.ToUpper(parameter.Name[0]) + parameter.Name.Substring(1); // Convert to PascalCase
-                    var initializer = GetParameterInitializer(parameter);
+                    var initializer = GetPropertyInitializerFromType(parameter.Type, parameter.NullableAnnotation);
                     
                     properties.Add(new PropertyInfo(typeName, propertyName, initializer));
                 }
@@ -222,13 +251,35 @@ namespace CodeGenerator.Patterns.Mediator
         return properties;
     }
 
-    private static string GetParameterInitializer(IParameterSymbol parameter)
+    private static string GetPropertyInitializerFromType(ITypeSymbol type, NullableAnnotation nullableAnnotation)
     {
-        // For record primary constructor parameters, we don't add default values
-        // in the record declaration - defaults are provided when creating instances
+        // Handle strings
+        if (type.SpecialType == SpecialType.System_String)
+        {
+            return " = \"\";";
+        }
+        
+        // Don't add initializers for value types (int, bool, DateTime, etc.)
+        if (type.IsValueType)
+        {
+            return "";
+        }
+        
+        // For nullable reference types, don't add initializer
+        if (type.CanBeReferencedByName && nullableAnnotation == NullableAnnotation.Annotated)
+        {
+            return "";
+        }
+        
+        // For non-nullable reference types (excluding string which we handled above), add null!
+        if (type.IsReferenceType && nullableAnnotation != NullableAnnotation.Annotated)
+        {
+            return " = null!;";
+        }
+        
         return "";
     }
-
+    
     private static string GetPropertyInitializer(IPropertySymbol property)
     {
         // Handle strings
@@ -293,6 +344,21 @@ namespace CodeGenerator.Patterns.Mediator
             var method = FindMethod(symbol, new[] { "ProcessAsync", "HandleAsync", "ExecuteAsync" });
             return new HandlerInfo(symbol.Name, name, HandlerType.Notification, eventType, null, method, symbol.ContainingNamespace?.ToDisplayString() ?? "");
         }
+        
+        var streamQueryHandlerAttr = GetAttribute(symbol, "StreamQueryHandlerAttribute");
+        if (streamQueryHandlerAttr != null)
+        {
+            var name = GetAttributeStringValue(streamQueryHandlerAttr, "Name");
+            var requestType = GetAttributeTypeValue(streamQueryHandlerAttr, "RequestType");
+            var method = FindMethod(symbol, new[] { "GetAsync", "HandleAsync", "ExecuteAsync" });
+            return new HandlerInfo(symbol.Name, 
+                name, 
+                HandlerType.StreamQuery, 
+                requestType, 
+                null, 
+                method, 
+                symbol.ContainingNamespace?.ToDisplayString() ?? "");
+        }
 
         return null;
     }
@@ -327,6 +393,26 @@ namespace CodeGenerator.Patterns.Mediator
             return typeSymbol.Name;
         }
         return null;
+    }
+
+    private static int GetAttributeIntValue(AttributeData attribute, string propertyName, int defaultValue)
+    {
+        var namedArg = attribute.NamedArguments.FirstOrDefault(kv => kv.Key == propertyName);
+        if (namedArg.Value.Value is int intValue)
+        {
+            return intValue;
+        }
+        return defaultValue;
+    }
+
+    private static bool GetAttributeBoolValue(AttributeData attribute, string propertyName, bool defaultValue)
+    {
+        var namedArg = attribute.NamedArguments.FirstOrDefault(kv => kv.Key == propertyName);
+        if (namedArg.Value.Value is bool boolValue)
+        {
+            return boolValue;
+        }
+        return defaultValue;
     }
 
     private static string? FindMethod(INamedTypeSymbol symbol, string[] possibleNames)
@@ -377,6 +463,11 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("// <auto-generated />");
         sb.AppendLine("#nullable enable");
         sb.AppendLine("using CodeGenerator.Patterns.Mediator;");
+        if (request.Type == RequestType.StreamQuery)
+        {
+            sb.AppendLine("using System.Collections.Generic;");
+            sb.AppendLine("using System.Runtime.CompilerServices;");
+        }
         sb.AppendLine();
 
         if (!string.IsNullOrEmpty(request.Namespace))
@@ -392,6 +483,7 @@ namespace CodeGenerator.Patterns.Mediator
             RequestType.Command when !string.IsNullOrEmpty(request.ResponseType) => $"ICommand<{request.ResponseType}>",
             RequestType.Command => "ICommand",
             RequestType.Notification => "INotification",
+            RequestType.StreamQuery => $"IStreamQuery<{request.ResponseType ?? "object"}>",
             _ => "object"
         };
 
@@ -419,6 +511,11 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("using CodeGenerator.Patterns.Mediator;");
         sb.AppendLine("using System.Threading;");
         sb.AppendLine("using System.Threading.Tasks;");
+        if (handler.Type == HandlerType.StreamQuery)
+        {
+            sb.AppendLine("using System.Collections.Generic;");
+            sb.AppendLine("using System.Runtime.CompilerServices;");
+        }
         sb.AppendLine();
 
         if (!string.IsNullOrEmpty(handler.Namespace))
@@ -438,6 +535,7 @@ namespace CodeGenerator.Patterns.Mediator
             HandlerType.Command when !string.IsNullOrEmpty(request.ResponseType) => $"ICommandHandler<{request.Name}, {request.ResponseType}>",
             HandlerType.Command => $"ICommandHandler<{request.Name}>",
             HandlerType.Notification => $"INotificationHandler<{request.Name}>",
+            HandlerType.StreamQuery => $"IStreamQueryHandler<{request.Name}, {request.ResponseType ?? "object"}>",
             _ => "object"
         };
 
@@ -445,6 +543,7 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine($"public class {handler.HandlerName} : {interfaceName}");
         sb.AppendLine("{");
         sb.AppendLine($"    private readonly {handler.ServiceClassName} _service;");
+        
         sb.AppendLine();
         sb.AppendLine($"    public {handler.HandlerName}({handler.ServiceClassName} service)");
         sb.AppendLine("    {");
@@ -457,6 +556,7 @@ namespace CodeGenerator.Patterns.Mediator
         {
             HandlerType.Query => $"Task<{request.ResponseType ?? "object"}>",
             HandlerType.Command when !string.IsNullOrEmpty(request.ResponseType) => $"Task<{request.ResponseType}>",
+            HandlerType.StreamQuery => $"IAsyncEnumerable<{request.ResponseType ?? "object"}>",
             _ => "Task"
         };
 
@@ -465,10 +565,18 @@ namespace CodeGenerator.Patterns.Mediator
             RequestType.Query => "query",
             RequestType.Command => "command", 
             RequestType.Notification => "notification",
+            RequestType.StreamQuery => "query",
             _ => "request"
         };
 
-        sb.AppendLine($"    public async {returnType} Handle({request.Name} {parameterName}, CancellationToken cancellationToken = default)");
+        if (handler.Type == HandlerType.StreamQuery)
+        {
+            sb.AppendLine($"    public async {returnType} Handle({request.Name} {parameterName}, [EnumeratorCancellation] CancellationToken cancellationToken = default)");
+        }
+        else
+        {
+            sb.AppendLine($"    public async {returnType} Handle({request.Name} {parameterName}, CancellationToken cancellationToken = default)");
+        }
         sb.AppendLine("    {");
 
         // Map from the new generated class/record to the original request class/record
@@ -497,7 +605,15 @@ namespace CodeGenerator.Patterns.Mediator
 
         if (handler.Method != null)
         {
-            if (handler.Type == HandlerType.Query || (handler.Type == HandlerType.Command && !string.IsNullOrEmpty(request.ResponseType)))
+            if (handler.Type == HandlerType.StreamQuery)
+            {
+                sb.AppendLine($"        await foreach (var item in _service.{handler.Method}(originalRequest, cancellationToken))");
+                
+                sb.AppendLine("        {");
+                sb.AppendLine("            yield return item;");
+                sb.AppendLine("        }");
+            }
+            else if (handler.Type == HandlerType.Query || (handler.Type == HandlerType.Command && !string.IsNullOrEmpty(request.ResponseType)))
             {
                 sb.AppendLine($"        return await _service.{handler.Method}(originalRequest, cancellationToken);");
             }
@@ -529,6 +645,7 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Threading;");
         sb.AppendLine("using System.Threading.Tasks;");
+        sb.AppendLine("using System.Collections.Generic;"); // Added for streaming support
         sb.AppendLine();
 
         var commonNamespace = GetMostCommonNamespace(handlers);
@@ -559,6 +676,9 @@ namespace CodeGenerator.Patterns.Mediator
 
         // Generate Publish method for notifications
         GeneratePublishMethod(sb, requests, handlers);
+
+        // Generate CreateStream method for stream queries
+        GenerateCreateStreamMethod(sb, requests, handlers);
 
         sb.AppendLine("}");
 
@@ -667,6 +787,29 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("        {");
         sb.AppendLine("            await Task.WhenAll(tasks);");
         sb.AppendLine("        }");
+        sb.AppendLine("    }");
+    }
+
+    private static void GenerateCreateStreamMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
+    {
+        sb.AppendLine();
+        sb.AppendLine("    public IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamQuery<TResponse> query, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        return query switch");
+        sb.AppendLine("        {");
+
+        var streamRequests = requests.Where(r => r.Type == RequestType.StreamQuery).ToList();
+        foreach (var request in streamRequests)
+        {
+            var handler = handlers.FirstOrDefault(h => h.RequestType == request.Name && h.Type == HandlerType.StreamQuery);
+            if (handler != null)
+            {
+                sb.AppendLine($"            {request.Name} typedQuery => (IAsyncEnumerable<TResponse>)_serviceProvider.GetRequiredService<{handler.HandlerName}>().Handle(typedQuery, cancellationToken),");
+            }
+        }
+
+        sb.AppendLine("            _ => throw new InvalidOperationException($\"No handler registered for stream query type {query.GetType().Name}\")");
+        sb.AppendLine("        };");
         sb.AppendLine("    }");
     }
 

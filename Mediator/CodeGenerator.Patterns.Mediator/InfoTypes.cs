@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace CodeGenerator.Patterns.Mediator;
 
@@ -13,7 +14,8 @@ public enum RequestType
 {
     Query,
     Command,
-    Notification
+    Notification,
+    StreamQuery
 }
 
 public class PropertyInfo
@@ -69,8 +71,7 @@ public class HandlerInfo
     public HandlerType Type { get; }
     public string HandlerName { get; }
     public string ServiceClassName { get; }
-
-
+    
     public HandlerInfo(
         string serviceClassName,
         string handlerName,
