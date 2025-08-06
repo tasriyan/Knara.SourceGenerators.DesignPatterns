@@ -1,6 +1,6 @@
 ﻿using CodeGenerator.Patterns.Singleton;
 
-namespace Demo.Singleton.ConsoleApp;
+namespace Singleton.UnitTests.UseCases;
 
 // EAGER SINGLETON - Pre-initialized at startup for ultra-fast access
 [Singleton(Strategy = SingletonStrategy.Eager)]
@@ -24,5 +24,22 @@ public partial class Logger
         {
             File.AppendAllText(_logFilePath, logEntry + Environment.NewLine);
         }
+    }
+}
+
+//CONVERTED TO SINGLETON
+partial class Logger
+{
+    private static readonly Logger _instance = CreateSingletonInstance();
+
+    static Logger() { } // Explicit static constructor for beforefieldinit
+
+    public static Logger Instance => _instance;
+
+    private static Logger CreateSingletonInstance()
+    {
+        var instance = new Logger();
+        instance.Initialize();
+        return instance;
     }
 }
