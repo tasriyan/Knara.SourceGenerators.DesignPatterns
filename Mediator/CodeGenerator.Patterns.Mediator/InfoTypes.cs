@@ -49,7 +49,6 @@ public class DiagnosticInfo
 	}
 }
 
-
 public class RequestInfo
 {
     public string ClassName { get; }
@@ -90,7 +89,6 @@ public class RequestInfoResult
 	}
 }
 
-
 public class HandlerInfo
 {
     public string Namespace { get; }
@@ -130,4 +128,54 @@ public class HandlerInfoResult
 		HandlerInfo = handlerInfo;
 		Diagnostics = diagnostics ?? [];
 	}
+}
+
+// NEW: Data structures for legacy method information
+public class ParameterInfo
+{
+	public string Type { get; } 
+	public string Name { get; }
+	public string Initializer { get; }
+	
+	public ParameterInfo(
+		string type,
+		string name,
+		string initializer)
+	{
+		Type = type;
+		Name = name;
+		Initializer = initializer;
+	}
+}
+
+public record LegacyMethodInfo
+{
+	public string ServiceClassName { get; }
+	public string MethodName { get; }
+	public string HandlerName { get; }
+	public string RequestName { get; }
+	public List<ParameterInfo> Parameters { get; }
+	public bool HasReturnType { get; }
+	public string? ReturnType { get; }
+	public string Namespace { get; }
+				
+	public LegacyMethodInfo(
+				 string serviceClassName,
+				 string methodName,
+				 string handlerName,
+				 string requestName,
+				 List<ParameterInfo> parameters,
+				 bool hasReturnType,
+				 string? returnType,
+				 string ns)
+		{
+			ServiceClassName = serviceClassName;
+			MethodName = methodName;
+			HandlerName = handlerName;
+			RequestName = requestName;
+			Parameters = parameters;
+			HasReturnType = hasReturnType;
+			ReturnType = returnType;
+			Namespace = ns;
+		}
 }

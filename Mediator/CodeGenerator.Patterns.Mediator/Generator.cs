@@ -15,10 +15,13 @@ public class DeclarativeMediatorGenerator : IIncrementalGenerator
 {
     private const string MediatorAttributes = @"
 using System;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace CodeGenerator.Patterns.Mediator
 {
-    // Request pattern attributes
+    // CQRS-style Request pattern attributes (EXISTING)
     [AttributeUsage(AttributeTargets.Class)]
     public class QueryAttribute : Attribute
     {
@@ -40,7 +43,7 @@ namespace CodeGenerator.Patterns.Mediator
         public Type? ResponseType { get; set; }
     }
 
-    // Handler pattern attributes
+    // CQRS-style Handler pattern attributes (EXISTING)
     [AttributeUsage(AttributeTargets.Class)]
     public class QueryHandlerAttribute : Attribute
     {
@@ -70,7 +73,14 @@ namespace CodeGenerator.Patterns.Mediator
         public Type? RequestType { get; set; }
     }
 
-    // Base interfaces for mediator pattern
+    // NEW: Legacy method-level pattern (MediatR-style)
+    [AttributeUsage(AttributeTargets.Method)]
+    public class RequestHandlerAttribute : Attribute
+    {
+        public string Name { get; set; } = """";
+    }
+
+    // CQRS-style interfaces (EXISTING)
     public interface IQuery<out TResponse> { }
     public interface ICommand { }
     public interface ICommand<out TResponse> { }
@@ -96,13 +106,33 @@ namespace CodeGenerator.Patterns.Mediator
 	    IAsyncEnumerable<TResponse> Handle(TQuery query, [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default);
     }
 
+    // NEW: Basic MediatR-style interfaces for legacy retrofitting
+    public interface IRequest { }
+    public interface IRequest<out TResponse> { }
+
+    public interface IRequestHandler<in TRequest> where TRequest : IRequest
+    {
+        Task Handle(TRequest request, CancellationToken cancellationToken = default);
+    }
+
+    public interface IRequestHandler<in TRequest, TResponse> where TRequest : IRequest<TResponse>
+    {
+        Task<TResponse> Handle(TRequest request, CancellationToken cancellationToken = default);
+    }
+
+    // Extended mediator interface supporting both patterns
     public interface IMediator
     {
+        // CQRS-style methods (EXISTING)
         Task<TResponse> Send<TResponse>(IQuery<TResponse> query, CancellationToken cancellationToken = default);
         Task Send(ICommand command, CancellationToken cancellationToken = default);
         Task<TResponse> Send<TResponse>(ICommand<TResponse> command, CancellationToken cancellationToken = default);
         Task Publish<TEvent>(TEvent eventObj, CancellationToken cancellationToken = default);
         IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamQuery<TResponse> query, CancellationToken cancellationToken = default);
+        
+        // NEW: MediatR-style methods for legacy support
+        Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default);
+        Task Send(IRequest request, CancellationToken cancellationToken = default);
     }
 }";
 
@@ -114,23 +144,34 @@ namespace CodeGenerator.Patterns.Mediator
             ctx.AddSource("MediatorAttributes.g.cs", SourceText.From(MediatorAttributes, Encoding.UTF8));
         });
 
-        // Get request classes (Query, Command, StreamQuery)
+        // EXISTING: Get request classes (Query, Command, StreamQuery)
         var requestClasses = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsRequestClass(s),
                 transform: static (ctx, _) => GetRequestInfo(ctx))
             .Where(static m => m is not null);
 
-        // Get handler classes (QueryHandler, CommandHandler, NotificationHandler, StreamQueryHandler)
+        // EXISTING: Get handler classes (QueryHandler, CommandHandler, NotificationHandler, StreamQueryHandler)
         var handlerClasses = context.SyntaxProvider
             .CreateSyntaxProvider(
                 predicate: static (s, _) => IsHandlerClass(s),
                 transform: static (ctx, _) => GetHandlerInfo(ctx))
             .Where(static m => m is not null);
 
-        // Combine and generate
-        var combined = requestClasses.Collect().Combine(handlerClasses.Collect());
-        context.RegisterSourceOutput(combined, static (spc, source) => GenerateMediatorCode(spc, source.Left, source.Right));
+        // NEW: Get legacy method handlers ([RequestHandler] on methods)
+        var legacyMethodHandlers = context.SyntaxProvider
+            .CreateSyntaxProvider(
+                predicate: static (s, _) => IsLegacyMethodHandler(s),
+                transform: static (ctx, _) => GetLegacyMethodInfo(ctx))
+            .Where(static m => m is not null);
+
+        // Combine all sources and generate
+        var combined = requestClasses.Collect()
+            .Combine(handlerClasses.Collect())
+            .Combine(legacyMethodHandlers.Collect());
+
+        context.RegisterSourceOutput(combined, static (spc, source) => 
+            GenerateMediatorCode(spc, source.Left.Left, source.Left.Right, source.Right));
     }
 
     private static bool IsRequestClass(SyntaxNode node)
@@ -139,9 +180,82 @@ namespace CodeGenerator.Patterns.Mediator
                (node is RecordDeclarationSyntax rec && rec.AttributeLists.Count > 0);
     }
 
+    // NEW: Detect methods with [RequestHandler] attribute
+    private static bool IsLegacyMethodHandler(SyntaxNode node)
+    {
+        if (node is not MethodDeclarationSyntax method) return false;
+        
+        return method.AttributeLists
+            .SelectMany(list => list.Attributes)
+            .Any(attr => attr.Name.ToString().Contains("RequestHandler"));
+    }
+    
     private static bool IsHandlerClass(SyntaxNode node)
     {
         return node is ClassDeclarationSyntax cls && cls.AttributeLists.Count > 0;
+    }
+    
+       // NEW: Extract legacy method handler information
+    private static LegacyMethodInfo? GetLegacyMethodInfo(GeneratorSyntaxContext context)
+    {
+        var method = (MethodDeclarationSyntax)context.Node;
+        var model = context.SemanticModel;
+        var methodSymbol = model.GetDeclaredSymbol(method);
+
+        if (methodSymbol == null) return null;
+
+        // Get the RequestHandler attribute
+        var requestHandlerAttr = methodSymbol.GetAttributes()
+            .FirstOrDefault(attr => attr.AttributeClass?.Name == "RequestHandlerAttribute");
+
+        if (requestHandlerAttr == null) return null;
+
+        var handlerName = GetAttributeStringValue(requestHandlerAttr, "Name");
+        if (string.IsNullOrEmpty(handlerName))
+        {
+            // Generate default name if not provided
+            handlerName = $"{methodSymbol.ContainingType.Name}_{methodSymbol.Name}_Handler";
+        }
+
+        // Analyze method signature
+        var parameters = new List<ParameterInfo>();
+        var hasReturnType = !methodSymbol.ReturnsVoid && methodSymbol.ReturnType.Name != "Task";
+        string? returnType = null;
+
+        // Extract return type for Task<T>
+        if (methodSymbol.ReturnType is INamedTypeSymbol namedReturn && 
+            namedReturn.IsGenericType && 
+            namedReturn.Name == "Task" &&
+            namedReturn.TypeArguments.Length == 1)
+        {
+            hasReturnType = true;
+            returnType = namedReturn.TypeArguments[0].ToDisplayString();
+        }
+
+        // Extract parameters (skip CancellationToken)
+        foreach (var param in methodSymbol.Parameters)
+        {
+            if (param.Type.Name == "CancellationToken") continue;
+            
+            parameters.Add(new ParameterInfo(
+                param.Type.ToDisplayString(),
+                param.Name,
+                GetPropertyInitializerFromType(param.Type, param.NullableAnnotation)
+            ));
+        }
+
+        var requestName = handlerName.Replace("Handler", "Request").Replace("_", "");
+
+        return new LegacyMethodInfo(
+            methodSymbol.ContainingType.Name,
+            methodSymbol.Name,
+            handlerName,
+            requestName,
+            parameters,
+            hasReturnType,
+            returnType,
+            methodSymbol.ContainingNamespace?.ToDisplayString() ?? ""
+        );
     }
 
     private static RequestInfoResult? GetRequestInfo(GeneratorSyntaxContext context)
@@ -601,9 +715,14 @@ namespace CodeGenerator.Patterns.Mediator
         return null;
     }
 
-    private static void GenerateMediatorCode(SourceProductionContext context, ImmutableArray<RequestInfoResult?> requestResults, ImmutableArray<HandlerInfoResult?> handlerResults)
+    // Update main generation method to handle legacy methods
+    private static void GenerateMediatorCode(
+        SourceProductionContext context, 
+        ImmutableArray<RequestInfoResult?> requestResults, 
+        ImmutableArray<HandlerInfoResult?> handlerResults,
+        ImmutableArray<LegacyMethodInfo?> legacyMethods)
     {
-        // Report all diagnostics first
+        // Report diagnostics (existing code)
         foreach (var requestResult in requestResults.Where(r => r != null))
         {
             foreach (var diagnostic in requestResult!.Diagnostics)
@@ -626,7 +745,7 @@ namespace CodeGenerator.Patterns.Mediator
             }
         }
 
-        // Extract valid requests and handlers
+        // Extract valid items
         var validRequests = requestResults
             .Where(r => r?.RequestInfo != null)
             .Select(r => r!.RequestInfo!)
@@ -637,73 +756,53 @@ namespace CodeGenerator.Patterns.Mediator
             .Select(h => h!.HandlerInfo!)
             .ToList();
 
-        if (!validRequests.Any() && !validHandlers.Any()) return;
+        var validLegacyMethods = legacyMethods
+            .Where(m => m != null)
+            .Cast<LegacyMethodInfo>()
+            .ToList();
 
-        // Check for orphaned requests (requests without handlers)
-        foreach (var request in validRequests)
-        {
-            var hasHandler = validHandlers.Any(h => h.RequestType == request.Name);
-            if (!hasHandler)
-            {
-                var handlerType = request.Type switch
-                {
-                    RequestType.Query => "Query",
-                    RequestType.Command => "Command",
-                    RequestType.StreamQuery => "StreamQuery",
-                    _ => "Unknown"
-                };
-                
-                context.ReportDiagnostic(Diagnostic.Create(
-                    MediatorDiagnostics.HandlerNotFound,
-                    Location.None,
-                    request.Name,
-                    handlerType));
-            }
-        }
-
-        // Check for orphaned handlers (handlers without requests)
-        foreach (var handler in validHandlers.Where(h => h.Type != HandlerType.Notification))
-        {
-            var hasRequest = validRequests.Any(r => r.Name == handler.RequestType);
-            if (!hasRequest && !string.IsNullOrEmpty(handler.RequestType))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    MediatorDiagnostics.RequestTypeNotFound,
-                    Location.None,
-                    handler.HandlerName,
-                    handler.RequestType));
-            }
-        }
+        if (!validRequests.Any() && !validHandlers.Any() && !validLegacyMethods.Any()) return;
 
         try
         {
-            // Generate request types that implement mediator interfaces
+            // EXISTING: Generate CQRS-style request implementations
             foreach (var request in validRequests)
             {
                 var requestSource = GenerateRequestImplementation(request);
                 context.AddSource($"{request.Name}.Request.g.cs", SourceText.From(requestSource, Encoding.UTF8));
             }
 
-            // Generate handler implementations
+            // EXISTING: Generate CQRS-style handler implementations
             foreach (var handler in validHandlers)
             {
                 var handlerSource = GenerateHandlerImplementation(handler, validRequests);
                 context.AddSource($"{handler.HandlerName}.Handler.g.cs", SourceText.From(handlerSource, Encoding.UTF8));
             }
 
-            // Generate mediator implementation
-            var mediatorSource = GenerateMediatorImplementation(validRequests, validHandlers);
+            // NEW: Generate legacy method request classes and handlers
+            foreach (var legacyMethod in validLegacyMethods)
+            {
+                // Generate request class
+                var requestSource = GenerateLegacyRequestImplementation(legacyMethod);
+                context.AddSource($"{legacyMethod.RequestName}.Request.g.cs", SourceText.From(requestSource, Encoding.UTF8));
+
+                // Generate handler class  
+                var handlerSource = GenerateLegacyHandlerImplementation(legacyMethod);
+                context.AddSource($"{legacyMethod.HandlerName}.Handler.g.cs", SourceText.From(handlerSource, Encoding.UTF8));
+            }
+
+            // Generate extended mediator implementation
+            var mediatorSource = GenerateExtendedMediatorImplementation(validRequests, validHandlers, validLegacyMethods);
             context.AddSource("GeneratedMediator.g.cs", SourceText.From(mediatorSource, Encoding.UTF8));
 
-            // Generate DI extensions
-            var diSource = GenerateDIExtensions(validHandlers);
+            // Generate extended DI extensions
+            var diSource = GenerateExtendedDIExtensions(validHandlers, validLegacyMethods);
             context.AddSource("MediatorDIExtensions.g.cs", SourceText.From(diSource, Encoding.UTF8));
         }
         catch (System.Exception ex)
         {
-            // Report any code generation errors
             context.ReportDiagnostic(Diagnostic.Create(
-				MediatorDiagnostics.CodeGenerationError,
+                MediatorDiagnostics.CodeGenerationError,
                 Location.None,
                 ex.Message));
         }
@@ -747,6 +846,43 @@ namespace CodeGenerator.Patterns.Mediator
         foreach (var property in request.Properties)
         {
             sb.AppendLine($"    public {property.Type} {property.Name} {{ get; set; }}{property.Initializer}");
+        }
+
+        sb.AppendLine("}");
+
+        return sb.ToString();
+    }
+    
+    // NEW: Generate request class for legacy method
+    private static string GenerateLegacyRequestImplementation(LegacyMethodInfo method)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("// <auto-generated />");
+        sb.AppendLine("#nullable enable");
+        sb.AppendLine("using CodeGenerator.Patterns.Mediator;");
+        sb.AppendLine();
+
+        if (!string.IsNullOrEmpty(method.Namespace))
+        {
+            sb.AppendLine($"namespace {method.Namespace};");
+            sb.AppendLine();
+        }
+
+        // Determine interface to implement
+        var interfaceName = method.HasReturnType 
+            ? $"IRequest<{method.ReturnType ?? "object"}>"
+            : "IRequest";
+
+        sb.AppendLine($"// Generated from method {method.ServiceClassName}.{method.MethodName}");
+        sb.AppendLine($"public class {method.RequestName} : {interfaceName}");
+        sb.AppendLine("{");
+
+        // Generate properties from method parameters
+        foreach (var parameter in method.Parameters)
+        {
+            var propertyName = char.ToUpper(parameter.Name[0]) + parameter.Name.Substring(1);
+            sb.AppendLine($"    public {parameter.Type} {propertyName} {{ get; set; }}{parameter.Initializer}");
         }
 
         sb.AppendLine("}");
@@ -893,6 +1029,78 @@ namespace CodeGenerator.Patterns.Mediator
 
         return sb.ToString();
     }
+    
+        // NEW: Generate handler class for legacy method
+    private static string GenerateLegacyHandlerImplementation(LegacyMethodInfo method)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("// <auto-generated />");
+        sb.AppendLine("#nullable enable");
+        sb.AppendLine("using CodeGenerator.Patterns.Mediator;");
+        sb.AppendLine("using System.Threading;");
+        sb.AppendLine("using System.Threading.Tasks;");
+        sb.AppendLine();
+
+        if (!string.IsNullOrEmpty(method.Namespace))
+        {
+            sb.AppendLine($"namespace {method.Namespace};");
+            sb.AppendLine();
+        }
+
+        // Determine handler interface to implement
+        var handlerInterface = method.HasReturnType
+            ? $"IRequestHandler<{method.RequestName}, {method.ReturnType ?? "object"}>"
+            : $"IRequestHandler<{method.RequestName}>";
+
+        var serviceFullName = !string.IsNullOrEmpty(method.Namespace) 
+            ? $"{method.Namespace}.{method.ServiceClassName}"
+            : method.ServiceClassName;
+
+        sb.AppendLine($"// Generated handler for {method.ServiceClassName}.{method.MethodName}");
+        sb.AppendLine($"public class {method.HandlerName} : {handlerInterface}");
+        sb.AppendLine("{");
+        sb.AppendLine($"    private readonly {serviceFullName} _service;");
+        sb.AppendLine();
+        sb.AppendLine($"    public {method.HandlerName}({serviceFullName} service)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        _service = service;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Generate Handle method
+        var returnType = method.HasReturnType 
+            ? $"Task<{method.ReturnType ?? "object"}>"
+            : "Task";
+
+        sb.AppendLine($"    public async {returnType} Handle({method.RequestName} request, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+
+        // Build method call arguments
+        var args = new List<string>();
+        foreach (var parameter in method.Parameters)
+        {
+            var propertyName = char.ToUpper(parameter.Name[0]) + parameter.Name.Substring(1);
+            args.Add($"request.{propertyName}");
+        }
+        args.Add("cancellationToken");
+
+        var methodCall = $"_service.{method.MethodName}({string.Join(", ", args)})";
+
+        if (method.HasReturnType)
+        {
+            sb.AppendLine($"        return await {methodCall};");
+        }
+        else
+        {
+            sb.AppendLine($"        await {methodCall};");
+        }
+
+        sb.AppendLine("    }");
+        sb.AppendLine("}");
+
+        return sb.ToString();
+    }
 
     private static string GenerateNotificationHandler(HandlerInfo handler)
     {
@@ -945,7 +1153,11 @@ namespace CodeGenerator.Patterns.Mediator
         return sb.ToString();
     }
 
-    private static string GenerateMediatorImplementation(List<RequestInfo> requests, List<HandlerInfo> handlers)
+    // Update mediator generation to support both patterns
+    private static string GenerateExtendedMediatorImplementation(
+        List<RequestInfo> requests, 
+        List<HandlerInfo> handlers, 
+        List<LegacyMethodInfo> legacyMethods)
     {
         var sb = new StringBuilder();
 
@@ -956,10 +1168,18 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("using System;");
         sb.AppendLine("using System.Threading;");
         sb.AppendLine("using System.Threading.Tasks;");
-        sb.AppendLine("using System.Collections.Generic;"); // Added for streaming support
+        sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine();
 
-        var commonNamespace = GetMostCommonNamespace(handlers);
+        var allNamespaces = new List<string>();
+        allNamespaces.AddRange(handlers.Where(h => !string.IsNullOrEmpty(h.Namespace)).Select(h => h.Namespace));
+        allNamespaces.AddRange(legacyMethods.Where(m => !string.IsNullOrEmpty(m.Namespace)).Select(m => m.Namespace));
+        
+        var commonNamespace = allNamespaces
+            .GroupBy(ns => ns)
+            .OrderByDescending(g => g.Count())
+            .FirstOrDefault()?.Key ?? "";
+
         if (!string.IsNullOrEmpty(commonNamespace))
         {
             sb.AppendLine($"namespace {commonNamespace};");
@@ -976,20 +1196,16 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("    }");
         sb.AppendLine();
 
-        // Generate Send method for queries
+        // EXISTING CQRS methods
         GenerateQuerySendMethod(sb, requests, handlers);
-
-        // Generate Send method for commands (void)
         GenerateCommandSendMethod(sb, requests, handlers);
-
-        // Generate Send method for commands with response
         GenerateCommandWithResponseSendMethod(sb, requests, handlers);
-
-        // Generate Publish method for notifications
         GeneratePublishMethod(sb, requests, handlers);
-
-        // Generate CreateStream method for stream queries
         GenerateCreateStreamMethod(sb, requests, handlers);
+
+        // NEW: Legacy MediatR-style methods
+        GenerateLegacySendMethod(sb, legacyMethods);
+        GenerateLegacySendWithResponseMethod(sb, legacyMethods);
 
         sb.AppendLine("}");
 
@@ -1079,6 +1295,59 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("    }");
         sb.AppendLine();
     }
+    
+        // NEW: Generate legacy Send method for IRequest
+    private static void GenerateLegacySendMethod(StringBuilder sb, List<LegacyMethodInfo> legacyMethods)
+    {
+        sb.AppendLine("    // Legacy MediatR-style Send method for IRequest");
+        sb.AppendLine("    public async Task Send(IRequest request, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        switch (request)");
+        sb.AppendLine("        {");
+
+        var voidMethods = legacyMethods.Where(m => !m.HasReturnType).ToList();
+        foreach (var method in voidMethods)
+        {
+            var handlerFullName = !string.IsNullOrEmpty(method.Namespace)
+                ? $"{method.Namespace}.{method.HandlerName}"
+                : method.HandlerName;
+                
+            sb.AppendLine($"            case {method.RequestName} typedRequest:");
+            sb.AppendLine($"                await _serviceProvider.GetRequiredService<{handlerFullName}>().Handle(typedRequest, cancellationToken);");
+            sb.AppendLine("                break;");
+        }
+
+        sb.AppendLine("            default:");
+        sb.AppendLine("                throw new InvalidOperationException($\"No handler registered for request type {request.GetType().Name}\");");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    // NEW: Generate legacy Send method for IRequest<T>
+    private static void GenerateLegacySendWithResponseMethod(StringBuilder sb, List<LegacyMethodInfo> legacyMethods)
+    {
+        sb.AppendLine("    // Legacy MediatR-style Send method for IRequest<T>");
+        sb.AppendLine("    public async Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        return request switch");
+        sb.AppendLine("        {");
+
+        var responseMethods = legacyMethods.Where(m => m.HasReturnType).ToList();
+        foreach (var method in responseMethods)
+        {
+            var handlerFullName = !string.IsNullOrEmpty(method.Namespace)
+                ? $"{method.Namespace}.{method.HandlerName}"
+                : method.HandlerName;
+                
+            sb.AppendLine($"            {method.RequestName} typedRequest => (TResponse)(object)await _serviceProvider.GetRequiredService<{handlerFullName}>().Handle(typedRequest, cancellationToken),");
+        }
+
+        sb.AppendLine("            _ => throw new InvalidOperationException($\"No handler registered for request type {request.GetType().Name}\")");
+        sb.AppendLine("        };");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
 
     private static void GeneratePublishMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
@@ -1137,7 +1406,8 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("    }");
     }
 
-    private static string GenerateDIExtensions(List<HandlerInfo> handlers)
+    // Update DI registration to include legacy handlers
+    private static string GenerateExtendedDIExtensions(List<HandlerInfo> handlers, List<LegacyMethodInfo> legacyMethods)
     {
         var sb = new StringBuilder();
 
@@ -1147,7 +1417,15 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("using CodeGenerator.Patterns.Mediator;");
         sb.AppendLine();
 
-        var commonNamespace = GetMostCommonNamespace(handlers);
+        var allNamespaces = new List<string>();
+        allNamespaces.AddRange(handlers.Where(h => !string.IsNullOrEmpty(h.Namespace)).Select(h => h.Namespace));
+        allNamespaces.AddRange(legacyMethods.Where(m => !string.IsNullOrEmpty(m.Namespace)).Select(m => m.Namespace));
+        
+        var commonNamespace = allNamespaces
+            .GroupBy(ns => ns)
+            .OrderByDescending(g => g.Count())
+            .FirstOrDefault()?.Key ?? "";
+
         if (!string.IsNullOrEmpty(commonNamespace))
         {
             sb.AppendLine($"namespace {commonNamespace};");
@@ -1159,7 +1437,7 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("    public static IServiceCollection AddDeclarativeMediator(this IServiceCollection services)");
         sb.AppendLine("    {");
 
-        // Register all handlers and their services
+        // EXISTING: Register CQRS-style handlers and services
         foreach (var handler in handlers)
         {
             var serviceFullName = !string.IsNullOrEmpty(handler.Namespace) 
@@ -1171,6 +1449,30 @@ namespace CodeGenerator.Patterns.Mediator
                 : handler.HandlerName;
                 
             sb.AppendLine($"        services.AddScoped<{serviceFullName}>();");
+            sb.AppendLine($"        services.AddScoped<{handlerFullName}>();");
+        }
+
+        // NEW: Register legacy method handlers and services
+        var uniqueServices = legacyMethods
+            .GroupBy(m => $"{m.Namespace}.{m.ServiceClassName}")
+            .Select(g => g.First())
+            .ToList();
+
+        foreach (var service in uniqueServices)
+        {
+            var serviceFullName = !string.IsNullOrEmpty(service.Namespace) 
+                ? $"{service.Namespace}.{service.ServiceClassName}"
+                : service.ServiceClassName;
+                
+            sb.AppendLine($"        services.AddScoped<{serviceFullName}>();");
+        }
+
+        foreach (var method in legacyMethods)
+        {
+            var handlerFullName = !string.IsNullOrEmpty(method.Namespace)
+                ? $"{method.Namespace}.{method.HandlerName}"
+                : method.HandlerName;
+                
             sb.AppendLine($"        services.AddScoped<{handlerFullName}>();");
         }
 
@@ -1191,4 +1493,5 @@ namespace CodeGenerator.Patterns.Mediator
             .OrderByDescending(g => g.Count())
             .FirstOrDefault()?.Key ?? "";
     }
+    
 }

@@ -8,7 +8,7 @@ namespace Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures;
 public record CreateUserRequest(int UserId, string Email, string FirstName, string LastName);
 
 [CommandHandler(Name="CreateUserCommandHandler", RequestType = typeof(CreateUserCommand))]
-public class CreateUserService(IUserRepository repository, IMediator mediator, ILogger<CreateUserService> logger)
+public class CreateUserService(IUserRepository repository, ILogger<CreateUserService> logger)
 {
     public async Task<bool> CreateAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
