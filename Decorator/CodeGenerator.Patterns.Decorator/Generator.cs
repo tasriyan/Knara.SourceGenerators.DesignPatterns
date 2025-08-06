@@ -41,6 +41,45 @@ public class DecoratorInfo
     }
 }
 
+// Helper classes for diagnostic collection
+public class InterfaceInfoResult
+{
+    public InterfaceInfo? InterfaceInfo { get; }
+    public List<DiagnosticInfo> Diagnostics { get; }
+
+    public InterfaceInfoResult(InterfaceInfo? interfaceInfo, List<DiagnosticInfo> diagnostics)
+    {
+        InterfaceInfo = interfaceInfo;
+        Diagnostics = diagnostics ?? [];
+    }
+}
+
+public class DecoratorInfoResult
+{
+    public DecoratorInfo? DecoratorInfo { get; }
+    public List<DiagnosticInfo> Diagnostics { get; }
+
+    public DecoratorInfoResult(DecoratorInfo? decoratorInfo, List<DiagnosticInfo> diagnostics)
+    {
+        DecoratorInfo = decoratorInfo;
+        Diagnostics = diagnostics ?? [];
+    }
+}
+
+public class DiagnosticInfo
+{
+    public DiagnosticDescriptor Descriptor { get; }
+    public Location Location { get; }
+    public object[] Args { get; }
+
+    public DiagnosticInfo(DiagnosticDescriptor descriptor, Location location, params object[] args)
+    {
+        Descriptor = descriptor;
+        Location = location;
+        Args = args ?? [];
+    }
+}
+
 [Generator]
 public class DecoratorFactoryGenerator : IIncrementalGenerator
 {
@@ -109,13 +148,22 @@ namespace CodeGenerator.Patterns.Decorator
         return node is ClassDeclarationSyntax cls && cls.AttributeLists.Count > 0;
     }
 
-    private static InterfaceInfo? GetInterfaceDeclaration(GeneratorSyntaxContext context)
+    private static InterfaceInfoResult? GetInterfaceDeclaration(GeneratorSyntaxContext context)
     {
         var interfaceDecl = (InterfaceDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
         var symbol = model.GetDeclaredSymbol(interfaceDecl);
+        var diagnostics = new List<DiagnosticInfo>();
 
-        if (symbol == null) return null;
+        if (symbol == null) 
+        {
+            var location = interfaceDecl.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                DecoratorDiagnostics.InterfaceSymbolNotResolved,
+                location,
+                interfaceDecl.Identifier.Text));
+            return new InterfaceInfoResult(null, diagnostics);
+        }
 
         var hasAttribute = symbol.GetAttributes()
             .Any(attr => attr.AttributeClass?.Name == "GenerateDecoratorFactoryAttribute");
@@ -143,17 +191,31 @@ namespace CodeGenerator.Patterns.Decorator
             baseName = symbol.Name.StartsWith("I") ? symbol.Name.Substring(1) : symbol.Name;
         }
 
-        return new InterfaceInfo(
+        // Check for naming conflicts with factory
+        var factoryName = $"{baseName}DecoratorFactory";
+        if (HasFactoryNamingConflict(symbol, factoryName))
+        {
+            var location = interfaceDecl.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                DecoratorDiagnostics.FactoryNameConflict,
+                location,
+                baseName));
+        }
+
+        var interfaceInfo = new InterfaceInfo(
             symbol.Name,
             baseName,
             symbol.ContainingNamespace?.ToDisplayString() ?? "");
+
+        return new InterfaceInfoResult(interfaceInfo, diagnostics);
     }
 
-    private static DecoratorInfo? GetDecoratorDeclaration(GeneratorSyntaxContext context)
+    private static DecoratorInfoResult? GetDecoratorDeclaration(GeneratorSyntaxContext context)
     {
         var classDecl = (ClassDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
         var symbol = model.GetDeclaredSymbol(classDecl);
+        var diagnostics = new List<DiagnosticInfo>();
 
         if (symbol == null) return null;
 
@@ -169,39 +231,126 @@ namespace CodeGenerator.Patterns.Decorator
                 decoratorType = typeValue;
         }
 
-        if (string.IsNullOrEmpty(decoratorType)) return null;
+        // Check for missing Type property
+        if (string.IsNullOrEmpty(decoratorType))
+        {
+            var location = classDecl.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                DecoratorDiagnostics.MissingDecoratorType,
+                location,
+                symbol.Name));
+            return new DecoratorInfoResult(null, diagnostics);
+        }
 
         // Find which interface this decorator implements
         var targetInterface = symbol.AllInterfaces
             .FirstOrDefault(i => i.GetAttributes()
                 .Any(attr => attr.AttributeClass?.Name == "GenerateDecoratorFactoryAttribute"));
 
-        if (targetInterface == null) return null;
+        if (targetInterface == null)
+        {
+            var location = classDecl.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                DecoratorDiagnostics.DecoratorNotImplementingInterface,
+                location,
+                symbol.Name,
+                "an interface marked with [GenerateDecoratorFactory]"));
+            return new DecoratorInfoResult(null, diagnostics);
+        }
 
-        // Get constructor parameters
+        // Get constructor parameters and validate
         var constructor = symbol.Constructors.FirstOrDefault(c => !c.IsStatic);
         var parameters = constructor?.Parameters.ToList() ?? new List<IParameterSymbol>();
 
-        return new DecoratorInfo(
+        // Validate constructor signature
+        if (constructor == null || !parameters.Any() || 
+            !SymbolEqualityComparer.Default.Equals(parameters[0].Type, targetInterface))
+        {
+            var location = classDecl.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                DecoratorDiagnostics.InvalidDecoratorConstructor,
+                location,
+                symbol.Name,
+                targetInterface.Name));
+        }
+
+        var decoratorInfo = new DecoratorInfo(
             symbol.Name,
             decoratorType,
             targetInterface.Name,
             parameters);
+
+        return new DecoratorInfoResult(decoratorInfo, diagnostics);
     }
 
-    private static void Execute(SourceProductionContext context, InterfaceInfo? interfaceData, ImmutableArray<DecoratorInfo?> decorators)
+    private static bool HasFactoryNamingConflict(INamedTypeSymbol interfaceSymbol, string factoryName)
     {
-        if (interfaceData == null) return;
+        // Check if factory name conflicts with existing types in the same namespace
+        var containingNamespace = interfaceSymbol.ContainingNamespace;
+        return containingNamespace.GetTypeMembers(factoryName).Any();
+    }
 
-        var validDecorators = decorators
-            .Where(d => d != null && d.TargetInterfaceName == interfaceData.Name)
-            .Cast<DecoratorInfo>()
+    private static void Execute(SourceProductionContext context, InterfaceInfoResult? interfaceResult, ImmutableArray<DecoratorInfoResult?> decoratorResults)
+    {
+        // Report interface diagnostics
+        if (interfaceResult != null)
+        {
+            foreach (var diagnostic in interfaceResult.Diagnostics)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    diagnostic.Descriptor,
+                    diagnostic.Location,
+                    diagnostic.Args));
+            }
+        }
+
+        // Report decorator diagnostics
+        foreach (var decoratorResult in decoratorResults.Where(d => d != null))
+        {
+            foreach (var diagnostic in decoratorResult!.Diagnostics)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    diagnostic.Descriptor,
+                    diagnostic.Location,
+                    diagnostic.Args));
+            }
+        }
+
+        // Skip generation if no valid interface
+        if (interfaceResult?.InterfaceInfo == null) return;
+
+        var interfaceData = interfaceResult.InterfaceInfo;
+        var validDecorators = decoratorResults
+            .Where(d => d?.DecoratorInfo != null && d.DecoratorInfo.TargetInterfaceName == interfaceData.Name)
+            .Select(d => d!.DecoratorInfo!)
             .ToList();
 
-        if (!validDecorators.Any()) return;
+        // Check if no valid decorators found
+        if (!validDecorators.Any())
+        {
+            var diagnostic = Diagnostic.Create(
+                DecoratorDiagnostics.NoValidDecorators,
+                Location.None,
+                interfaceData.Name);
+            context.ReportDiagnostic(diagnostic);
+            return;
+        }
 
-        var source = GenerateFactory(interfaceData, validDecorators);
-        context.AddSource($"{interfaceData.BaseName}DecoratorFactory.g.cs", SourceText.From(source, Encoding.UTF8));
+        try
+        {
+            var source = GenerateFactory(interfaceData, validDecorators);
+            context.AddSource($"{interfaceData.BaseName}DecoratorFactory.g.cs", SourceText.From(source, Encoding.UTF8));
+        }
+        catch (System.Exception ex)
+        {
+            // Report any code generation errors
+            var diagnostic = Diagnostic.Create(
+				DecoratorDiagnostics.CodeGenerationError,
+                Location.None,
+                interfaceData.Name,
+                ex.Message);
+            context.ReportDiagnostic(diagnostic);
+        }
     }
 
     private static string GenerateFactory(InterfaceInfo interfaceData, List<DecoratorInfo> decorators)

@@ -1,6 +1,7 @@
-# Decorator Pattern Factory Generator
+# Decorator Factory Generator
 
 A C# source generator that automatically creates fluent factory methods for the Decorator design pattern.
+
 ## Features
 
 - **Automatic Factory Generation**: Creates fluent factory classes for interfaces marked with `[GenerateDecoratorFactory]`
@@ -8,10 +9,16 @@ A C# source generator that automatically creates fluent factory methods for the 
 - **Flexible Constructor Injection**: Supports decorators with varying constructor parameters
 - **Clean Fluent API**: Method chaining for readable decorator composition
 
-## Installation
+Add the source generator to your project:
 ```bash
-<PackageReference Include="CodeGenerator.Patterns.Decorator" Version="1.0.0" />
+<ItemGroup> <ProjectReference Include="path/to/SourceGenerators.DesignPatterns.Decorator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
 ```
+
+Or via NuGet (when published): 
+```bash
+dotnet add package SourceGenerators.DesignPatterns.Decorator
+```
+
 
 ## Quick Start
 
