@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.CodeAnalysis;
+using System;
 using System.Collections.Generic;
 
 namespace CodeGenerator.Patterns.Mediator;
@@ -34,6 +35,21 @@ public class PropertyInfo
     }
 }
 
+public class DiagnosticInfo
+{
+	public DiagnosticDescriptor Descriptor { get; }
+	public Location Location { get; }
+	public object[] Args { get; }
+
+	public DiagnosticInfo(DiagnosticDescriptor descriptor, Location location, params object[] args)
+	{
+		Descriptor = descriptor;
+		Location = location;
+		Args = args ?? [];
+	}
+}
+
+
 public class RequestInfo
 {
     public string ClassName { get; }
@@ -62,6 +78,19 @@ public class RequestInfo
     }
 }
 
+public class RequestInfoResult
+{
+	public RequestInfo? RequestInfo { get; }
+	public List<DiagnosticInfo> Diagnostics { get; }
+
+	public RequestInfoResult(RequestInfo? requestInfo, List<DiagnosticInfo> diagnostics)
+	{
+		RequestInfo = requestInfo;
+		Diagnostics = diagnostics ?? [];
+	}
+}
+
+
 public class HandlerInfo
 {
     public string Namespace { get; }
@@ -89,4 +118,16 @@ public class HandlerInfo
         Method = method;
         Namespace = ns;
     }
+}
+
+public class HandlerInfoResult
+{
+	public HandlerInfo? HandlerInfo { get; }
+	public List<DiagnosticInfo> Diagnostics { get; }
+
+	public HandlerInfoResult(HandlerInfo? handlerInfo, List<DiagnosticInfo> diagnostics)
+	{
+		HandlerInfo = handlerInfo;
+		Diagnostics = diagnostics ?? [];
+	}
 }

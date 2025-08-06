@@ -9,6 +9,7 @@ using System.Text;
 
 namespace CodeGenerator.Patterns.Mediator;
 
+
 [Generator]
 public class DeclarativeMediatorGenerator : IIncrementalGenerator
 {
@@ -143,25 +144,51 @@ namespace CodeGenerator.Patterns.Mediator
         return node is ClassDeclarationSyntax cls && cls.AttributeLists.Count > 0;
     }
 
-    private static RequestInfo? GetRequestInfo(GeneratorSyntaxContext context)
+    private static RequestInfoResult? GetRequestInfo(GeneratorSyntaxContext context)
     {
         var model = context.SemanticModel;
         INamedTypeSymbol? symbol = null;
         bool isRecord = false;
+        SyntaxNode node = context.Node;
+        var diagnostics = new List<DiagnosticInfo>();
 
         // Handle both class and record declarations
         if (context.Node is ClassDeclarationSyntax classDecl)
         {
             symbol = model.GetDeclaredSymbol(classDecl);
             isRecord = false;
+            node = classDecl;
         }
         else if (context.Node is RecordDeclarationSyntax recordDecl)
         {
             symbol = model.GetDeclaredSymbol(recordDecl);
             isRecord = true;
+            node = recordDecl;
         }
 
-        if (symbol == null) return null;
+        if (symbol == null) 
+        {
+            var location = node.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                MediatorDiagnostics.TypeSymbolNotResolved,
+                location,
+                GetNodeIdentifier(node)));
+            return new RequestInfoResult(null, diagnostics);
+        }
+
+        // Check for conflicting request attributes
+        var requestAttributes = GetRequestAttributes(symbol);
+        if (requestAttributes.Count > 1)
+        {
+            var location = node.GetLocation();
+            var attributeNames = string.Join(", ", requestAttributes.Select(a => a.AttributeClass?.Name ?? "Unknown"));
+            diagnostics.Add(new DiagnosticInfo(
+                MediatorDiagnostics.ConflictingRequestAttributes,
+                location,
+                symbol.Name,
+                attributeNames));
+            return new RequestInfoResult(null, diagnostics);
+        }
 
         // Extract properties from the class/record
         var properties = ExtractProperties(symbol, isRecord);
@@ -170,24 +197,57 @@ namespace CodeGenerator.Patterns.Mediator
         if (queryAttr != null)
         {
             var name = GetAttributeStringValue(queryAttr, "Name");
+            if (string.IsNullOrEmpty(name))
+            {
+                var location = node.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingRequestName,
+                    location,
+                    symbol.Name,
+                    "Query"));
+                return new RequestInfoResult(null, diagnostics);
+            }
             var responseType = GetAttributeTypeValue(queryAttr, "ResponseType");
-            return new RequestInfo(symbol.Name, name, RequestType.Query, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+            var requestInfo = new RequestInfo(symbol.Name, name, RequestType.Query, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+            return new RequestInfoResult(requestInfo, diagnostics);
         }
 
         var commandAttr = GetAttribute(symbol, "CommandAttribute");
         if (commandAttr != null)
         {
             var name = GetAttributeStringValue(commandAttr, "Name");
+            if (string.IsNullOrEmpty(name))
+            {
+                var location = node.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingRequestName,
+                    location,
+                    symbol.Name,
+                    "Command"));
+                return new RequestInfoResult(null, diagnostics);
+            }
             var responseType = GetAttributeTypeValue(commandAttr, "ResponseType");
-            return new RequestInfo(symbol.Name, name, RequestType.Command, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+            var requestInfo = new RequestInfo(symbol.Name, name, RequestType.Command, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+            return new RequestInfoResult(requestInfo, diagnostics);
         }
 
         var streamQueryAttr = GetAttribute(symbol, "StreamQueryAttribute");
         if (streamQueryAttr != null)
         {
             var name = GetAttributeStringValue(streamQueryAttr, "Name");
+            if (string.IsNullOrEmpty(name))
+            {
+                var location = node.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingRequestName,
+                    location,
+                    symbol.Name,
+                    "StreamQuery"));
+                return new RequestInfoResult(null, diagnostics);
+            }
             var responseType = GetAttributeTypeValue(streamQueryAttr, "ResponseType");
-            return new RequestInfo(symbol.Name, name, RequestType.StreamQuery, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+            var requestInfo = new RequestInfo(symbol.Name, name, RequestType.StreamQuery, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+            return new RequestInfoResult(requestInfo, diagnostics);
         }
 
         return null;
@@ -290,58 +350,192 @@ namespace CodeGenerator.Patterns.Mediator
         return "";
     }
 
-    private static HandlerInfo? GetHandlerInfo(GeneratorSyntaxContext context)
+    private static HandlerInfoResult? GetHandlerInfo(GeneratorSyntaxContext context)
     {
         var classDecl = (ClassDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
         var symbol = model.GetDeclaredSymbol(classDecl);
+        var diagnostics = new List<DiagnosticInfo>();
 
-        if (symbol == null) return null;
+        if (symbol == null) 
+        {
+            var location = classDecl.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                MediatorDiagnostics.TypeSymbolNotResolved,
+                location,
+                classDecl.Identifier.Text));
+            return new HandlerInfoResult(null, diagnostics);
+        }
+
+        // Check for conflicting handler attributes
+        var handlerAttributes = GetHandlerAttributes(symbol);
+        if (handlerAttributes.Count > 1)
+        {
+            var location = classDecl.GetLocation();
+            var attributeNames = string.Join(", ", handlerAttributes.Select(a => a.AttributeClass?.Name ?? "Unknown"));
+            diagnostics.Add(new DiagnosticInfo(
+                MediatorDiagnostics.ConflictingHandlerAttributes,
+                location,
+                symbol.Name,
+                attributeNames));
+            return new HandlerInfoResult(null, diagnostics);
+        }
 
         var queryHandlerAttr = GetAttribute(symbol, "QueryHandlerAttribute");
         if (queryHandlerAttr != null)
         {
             var name = GetAttributeStringValue(queryHandlerAttr, "Name");
+            if (string.IsNullOrEmpty(name))
+            {
+                var location = classDecl.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingHandlerName,
+                    location,
+                    symbol.Name,
+                    "QueryHandler"));
+                return new HandlerInfoResult(null, diagnostics);
+            }
             var requestType = GetAttributeTypeValue(queryHandlerAttr, "RequestType");
             var method = FindMethod(symbol, new[] { "GetAsync", "QueryAsync", "ExecuteAsync" });
-            return new HandlerInfo(symbol.Name, name, HandlerType.Query, requestType, null, method, symbol.ContainingNamespace?.ToDisplayString() ?? "");
+            
+            // Check if method exists
+            if (method == null)
+            {
+                var location = classDecl.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingHandlerMethod,
+                    location,
+                    symbol.Name,
+                    "GetAsync, QueryAsync, ExecuteAsync"));
+            }
+            
+            var handlerInfo = new HandlerInfo(symbol.Name, name, HandlerType.Query, requestType, null, method, symbol.ContainingNamespace?.ToDisplayString() ?? "");
+            return new HandlerInfoResult(handlerInfo, diagnostics);
         }
 
         var commandHandlerAttr = GetAttribute(symbol, "CommandHandlerAttribute");
         if (commandHandlerAttr != null)
         {
             var name = GetAttributeStringValue(commandHandlerAttr, "Name");
+            if (string.IsNullOrEmpty(name))
+            {
+                var location = classDecl.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingHandlerName,
+                    location,
+                    symbol.Name,
+                    "CommandHandler"));
+                return new HandlerInfoResult(null, diagnostics);
+            }
             var requestType = GetAttributeTypeValue(commandHandlerAttr, "RequestType");
             var publisherType = GetAttributeTypeValue(commandHandlerAttr, "PublisherType");
             var method = FindMethod(symbol, new[] { "CreateAsync", "UpdateAsync", "DeleteAsync", "ExecuteAsync", "ProcessAsync" });
-            return new HandlerInfo(symbol.Name, name, HandlerType.Command, requestType, publisherType, method, symbol.ContainingNamespace?.ToDisplayString() ?? "");
+            
+            // Check if method exists
+            if (method == null)
+            {
+                var location = classDecl.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingHandlerMethod,
+                    location,
+                    symbol.Name,
+                    "CreateAsync, UpdateAsync, DeleteAsync, ExecuteAsync, ProcessAsync"));
+            }
+            
+            var handlerInfo = new HandlerInfo(symbol.Name, name, HandlerType.Command, requestType, publisherType, method, symbol.ContainingNamespace?.ToDisplayString() ?? "");
+            return new HandlerInfoResult(handlerInfo, diagnostics);
         }
 
         var notificationHandlerAttr = GetAttribute(symbol, "NotificationHandlerAttribute");
         if (notificationHandlerAttr != null)
         {
             var name = GetAttributeStringValue(notificationHandlerAttr, "Name");
+            if (string.IsNullOrEmpty(name))
+            {
+                var location = classDecl.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingHandlerName,
+                    location,
+                    symbol.Name,
+                    "NotificationHandler"));
+                return new HandlerInfoResult(null, diagnostics);
+            }
             var eventType = GetAttributeTypeValue(notificationHandlerAttr, "EventType");
             var method = FindMethod(symbol, new[] { "ProcessAsync", "HandleAsync", "ExecuteAsync" });
-            return new HandlerInfo(symbol.Name, name, HandlerType.Notification, eventType, null, method, symbol.ContainingNamespace?.ToDisplayString() ?? "");
+            
+            // Check if method exists
+            if (method == null)
+            {
+                var location = classDecl.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingHandlerMethod,
+                    location,
+                    symbol.Name,
+                    "ProcessAsync, HandleAsync, ExecuteAsync"));
+            }
+            
+            var handlerInfo = new HandlerInfo(symbol.Name, name, HandlerType.Notification, eventType, null, method, symbol.ContainingNamespace?.ToDisplayString() ?? "");
+            return new HandlerInfoResult(handlerInfo, diagnostics);
         }
         
         var streamQueryHandlerAttr = GetAttribute(symbol, "StreamQueryHandlerAttribute");
         if (streamQueryHandlerAttr != null)
         {
             var name = GetAttributeStringValue(streamQueryHandlerAttr, "Name");
+            if (string.IsNullOrEmpty(name))
+            {
+                var location = classDecl.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingHandlerName,
+                    location,
+                    symbol.Name,
+                    "StreamQueryHandler"));
+                return new HandlerInfoResult(null, diagnostics);
+            }
             var requestType = GetAttributeTypeValue(streamQueryHandlerAttr, "RequestType");
             var method = FindMethod(symbol, new[] { "GetAsync", "HandleAsync", "ExecuteAsync" });
-            return new HandlerInfo(symbol.Name, 
-                name, 
-                HandlerType.StreamQuery, 
-                requestType, 
-                null, 
-                method, 
-                symbol.ContainingNamespace?.ToDisplayString() ?? "");
+            
+            // Check if method exists
+            if (method == null)
+            {
+                var location = classDecl.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    MediatorDiagnostics.MissingHandlerMethod,
+                    location,
+                    symbol.Name,
+                    "GetAsync, HandleAsync, ExecuteAsync"));
+            }
+            
+            var handlerInfo = new HandlerInfo(symbol.Name, name, HandlerType.StreamQuery, requestType, null, method, symbol.ContainingNamespace?.ToDisplayString() ?? "");
+            return new HandlerInfoResult(handlerInfo, diagnostics);
         }
 
         return null;
+    }
+
+    // Helper methods for diagnostics
+    private static List<AttributeData> GetRequestAttributes(INamedTypeSymbol symbol)
+    {
+        return symbol.GetAttributes()
+            .Where(attr => attr.AttributeClass?.Name is "QueryAttribute" or "CommandAttribute" or "StreamQueryAttribute")
+            .ToList();
+    }
+
+    private static List<AttributeData> GetHandlerAttributes(INamedTypeSymbol symbol)
+    {
+        return symbol.GetAttributes()
+            .Where(attr => attr.AttributeClass?.Name is "QueryHandlerAttribute" or "CommandHandlerAttribute" or "NotificationHandlerAttribute" or "StreamQueryHandlerAttribute")
+            .ToList();
+    }
+
+    private static string GetNodeIdentifier(SyntaxNode node)
+    {
+        return node switch
+        {
+            ClassDeclarationSyntax cls => cls.Identifier.Text,
+            RecordDeclarationSyntax rec => rec.Identifier.Text,
+            _ => "Unknown"
+        };
     }
 
     private static AttributeData? GetAttribute(INamedTypeSymbol symbol, string attributeName)
@@ -407,34 +601,112 @@ namespace CodeGenerator.Patterns.Mediator
         return null;
     }
 
-    private static void GenerateMediatorCode(SourceProductionContext context, ImmutableArray<RequestInfo?> requests, ImmutableArray<HandlerInfo?> handlers)
+    private static void GenerateMediatorCode(SourceProductionContext context, ImmutableArray<RequestInfoResult?> requestResults, ImmutableArray<HandlerInfoResult?> handlerResults)
     {
-        var validRequests = requests.Where(r => r != null).Cast<RequestInfo>().ToList();
-        var validHandlers = handlers.Where(h => h != null).Cast<HandlerInfo>().ToList();
+        // Report all diagnostics first
+        foreach (var requestResult in requestResults.Where(r => r != null))
+        {
+            foreach (var diagnostic in requestResult!.Diagnostics)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    diagnostic.Descriptor,
+                    diagnostic.Location,
+                    diagnostic.Args));
+            }
+        }
+
+        foreach (var handlerResult in handlerResults.Where(h => h != null))
+        {
+            foreach (var diagnostic in handlerResult!.Diagnostics)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    diagnostic.Descriptor,
+                    diagnostic.Location,
+                    diagnostic.Args));
+            }
+        }
+
+        // Extract valid requests and handlers
+        var validRequests = requestResults
+            .Where(r => r?.RequestInfo != null)
+            .Select(r => r!.RequestInfo!)
+            .ToList();
+        
+        var validHandlers = handlerResults
+            .Where(h => h?.HandlerInfo != null)
+            .Select(h => h!.HandlerInfo!)
+            .ToList();
 
         if (!validRequests.Any() && !validHandlers.Any()) return;
 
-        // Generate request types that implement mediator interfaces
+        // Check for orphaned requests (requests without handlers)
         foreach (var request in validRequests)
         {
-            var requestSource = GenerateRequestImplementation(request);
-            context.AddSource($"{request.Name}.Request.g.cs", SourceText.From(requestSource, Encoding.UTF8));
+            var hasHandler = validHandlers.Any(h => h.RequestType == request.Name);
+            if (!hasHandler)
+            {
+                var handlerType = request.Type switch
+                {
+                    RequestType.Query => "Query",
+                    RequestType.Command => "Command",
+                    RequestType.StreamQuery => "StreamQuery",
+                    _ => "Unknown"
+                };
+                
+                context.ReportDiagnostic(Diagnostic.Create(
+                    MediatorDiagnostics.HandlerNotFound,
+                    Location.None,
+                    request.Name,
+                    handlerType));
+            }
         }
 
-        // Generate handler implementations
-        foreach (var handler in validHandlers)
+        // Check for orphaned handlers (handlers without requests)
+        foreach (var handler in validHandlers.Where(h => h.Type != HandlerType.Notification))
         {
-            var handlerSource = GenerateHandlerImplementation(handler, validRequests);
-            context.AddSource($"{handler.HandlerName}.Handler.g.cs", SourceText.From(handlerSource, Encoding.UTF8));
+            var hasRequest = validRequests.Any(r => r.Name == handler.RequestType);
+            if (!hasRequest && !string.IsNullOrEmpty(handler.RequestType))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    MediatorDiagnostics.RequestTypeNotFound,
+                    Location.None,
+                    handler.HandlerName,
+                    handler.RequestType));
+            }
         }
 
-        // Generate mediator implementation
-        var mediatorSource = GenerateMediatorImplementation(validRequests, validHandlers);
-        context.AddSource("GeneratedMediator.g.cs", SourceText.From(mediatorSource, Encoding.UTF8));
+        try
+        {
+            // Generate request types that implement mediator interfaces
+            foreach (var request in validRequests)
+            {
+                var requestSource = GenerateRequestImplementation(request);
+                context.AddSource($"{request.Name}.Request.g.cs", SourceText.From(requestSource, Encoding.UTF8));
+            }
 
-        // Generate DI extensions
-        var diSource = GenerateDIExtensions(validHandlers);
-        context.AddSource("MediatorDIExtensions.g.cs", SourceText.From(diSource, Encoding.UTF8));
+            // Generate handler implementations
+            foreach (var handler in validHandlers)
+            {
+                var handlerSource = GenerateHandlerImplementation(handler, validRequests);
+                context.AddSource($"{handler.HandlerName}.Handler.g.cs", SourceText.From(handlerSource, Encoding.UTF8));
+            }
+
+            // Generate mediator implementation
+            var mediatorSource = GenerateMediatorImplementation(validRequests, validHandlers);
+            context.AddSource("GeneratedMediator.g.cs", SourceText.From(mediatorSource, Encoding.UTF8));
+
+            // Generate DI extensions
+            var diSource = GenerateDIExtensions(validHandlers);
+            context.AddSource("MediatorDIExtensions.g.cs", SourceText.From(diSource, Encoding.UTF8));
+        }
+        catch (System.Exception ex)
+        {
+            // Report any code generation errors
+            context.ReportDiagnostic(Diagnostic.Create(
+				MediatorDiagnostics.CodeGenerationError,
+                Location.None,
+                ex.Message));
+        }
     }
 
     private static string GenerateRequestImplementation(RequestInfo request)
