@@ -27,4 +27,44 @@ public static class BuilderDiagnostics
         category: "Builder",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor TypeSymbolNotResolved = new(
+        id: "BLD004",
+        title: "Type symbol could not be resolved",
+        messageFormat: "Unable to resolve type symbol for '{0}'. Builder generation skipped",
+        category: "Builder",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor BuilderNameConflict = new(
+        id: "BLD005",
+        title: "Builder name conflicts with existing type",
+        messageFormat: "Builder name '{0}' conflicts with existing type in namespace. Consider using BuilderName attribute for type '{1}'",
+        category: "Builder",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor NoPropertiesForBuilder = new(
+        id: "BLD006",
+        title: "No properties found for builder generation",
+        messageFormat: "Type '{0}' has no settable properties or properties marked for builder generation",
+        category: "Builder",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor ConflictingPropertyAttributes = new(
+        id: "BLD007",
+        title: "Conflicting property attributes detected",
+        messageFormat: "Property '{0}' has both BuilderProperty and BuilderCollection attributes which may cause conflicts",
+        category: "Builder",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor CodeGenerationError = new(
+        id: "BLD008",
+        title: "Code generation error occurred",
+        messageFormat: "Failed to generate builder for type '{0}': {1}",
+        category: "Builder",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

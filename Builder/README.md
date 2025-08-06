@@ -1,6 +1,7 @@
-﻿# Source Generators Design Patterns - Builder Pattern
+﻿# Declarative Builder Pattern
 
-A C# source generator that automatically creates Builder pattern implementations for your classes and records. This generator eliminates boilerplate code while providing a fluent, type-safe API for object construction.
+A C# source generator that retrofits your classes and records with the Builder design pattern, providing a fluent API for object construction. 
+This generator eliminates boilerplate code while providing a fluent, type-safe API for object construction.
 
 ## Overview
 

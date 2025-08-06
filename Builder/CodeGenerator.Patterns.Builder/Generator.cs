@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -6,6 +7,44 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace CodeGenerator.Patterns.Builder;
+
+// Helper classes for diagnostic collection
+public class TypeToGenerateResult
+{
+    public TypeToGenerate? TypeToGenerate { get; }
+    public List<DiagnosticInfo> Diagnostics { get; }
+
+	public TypeToGenerateResult(TypeToGenerate? typeToGenerate, List<DiagnosticInfo> diagnostics)
+    {
+        TypeToGenerate = typeToGenerate;
+        Diagnostics = diagnostics ?? [];
+	}
+}
+
+public class PropertyToGenerateResult
+{
+    public PropertyToGenerate? Property { get; }
+    public List<DiagnosticInfo> Diagnostics { get; }
+	public PropertyToGenerateResult(PropertyToGenerate? property, List<DiagnosticInfo> diagnostics)
+    {
+        Property = property;
+        Diagnostics = diagnostics ?? [];
+	}
+}
+
+public class DiagnosticInfo
+{
+	public DiagnosticDescriptor Descriptor {get; }
+    public Location Location { get; }
+    public object[] Args { get; }
+
+	public DiagnosticInfo(DiagnosticDescriptor descriptor, Location location, params object[] args)
+    {
+        Descriptor = descriptor;
+        Location = location;
+        Args = args ?? [];
+	}
+}
 
 [Generator]
 public class BuilderPatternGenerator : IIncrementalGenerator
@@ -68,7 +107,7 @@ public class BuilderPatternGenerator : IIncrementalGenerator
                 predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
                 transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
             .Where(static m => m is not null);
-        
+
         // Generate builders for each candidate
         context.RegisterSourceOutput(builderCandidates, static (spc, source) => Execute(source!, spc));
     }
@@ -78,7 +117,7 @@ public class BuilderPatternGenerator : IIncrementalGenerator
         return node is ClassDeclarationSyntax or RecordDeclarationSyntax;
     }
 
-    static TypeToGenerate? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
+    static TypeToGenerateResult? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
         var typeDeclaration = (TypeDeclarationSyntax)context.Node;
 
@@ -103,12 +142,36 @@ public class BuilderPatternGenerator : IIncrementalGenerator
         return null;
     }
 
-    static TypeToGenerate CreateTypeToGenerate(GeneratorSyntaxContext context, TypeDeclarationSyntax typeDeclaration)
+    static TypeToGenerateResult CreateTypeToGenerate(GeneratorSyntaxContext context, TypeDeclarationSyntax typeDeclaration)
     {
         var typeSymbol = context.SemanticModel.GetDeclaredSymbol(typeDeclaration) as INamedTypeSymbol;
-        if (typeSymbol == null) return null;
+        var diagnostics = new List<DiagnosticInfo>();
+
+        if (typeSymbol == null)
+        {
+            // Collect diagnostic for later reporting
+            var location = typeDeclaration.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                BuilderDiagnostics.TypeSymbolNotResolved,
+                location,
+                typeDeclaration.Identifier.Text));
+            return new TypeToGenerateResult(null, diagnostics);
+        }
 
         var properties = new List<PropertyToGenerate>();
+        var builderAttribute = GetBuilderAttribute(typeSymbol);
+
+        // Validate builder name for conflicts
+        var builderName = builderAttribute?.BuilderName ?? $"{typeSymbol.Name}Builder";
+        if (HasNamingConflict(typeSymbol, builderName))
+        {
+            var location = typeDeclaration.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                BuilderDiagnostics.BuilderNameConflict,
+                location,
+                builderName,
+                typeSymbol.Name));
+        }
 
         foreach (var member in typeSymbol.GetMembers().OfType<IPropertySymbol>())
         {
@@ -116,44 +179,92 @@ public class BuilderPatternGenerator : IIncrementalGenerator
             var hasBuilderAttribute = GetBuilderPropertyAttribute(member) != null;
             var isCollection = IsCollectionType(member.Type);
             var hasSetter = member.SetMethod != null;
-        
+
             if (hasSetter || hasBuilderAttribute || isCollection)
             {
-                var property = CreatePropertyToGenerate(member);
-                if (property != null && !property.IgnoreInBuilder)
+                var propertyResult = CreatePropertyToGenerate(member);
+                if (propertyResult.Property != null && !propertyResult.Property.IgnoreInBuilder)
                 {
-                    properties.Add(property);
+                    properties.Add(propertyResult.Property);
                 }
+                diagnostics.AddRange(propertyResult.Diagnostics);
             }
         }
 
-        var builderAttribute = GetBuilderAttribute(typeSymbol);
+        // Warn if no properties found for builder generation
+        if (!properties.Any())
+        {
+            var location = typeDeclaration.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                BuilderDiagnostics.NoPropertiesForBuilder,
+                location,
+                typeSymbol.Name));
+        }
 
-        return new TypeToGenerate
+        var typeToGenerate = new TypeToGenerate
         {
             Name = typeSymbol.Name,
             Namespace = typeSymbol.ContainingNamespace.ToDisplayString(),
             IsRecord = typeDeclaration is RecordDeclarationSyntax,
             Properties = properties,
-            BuilderName = builderAttribute?.BuilderName ?? $"{typeSymbol.Name}Builder",
+            BuilderName = builderName,
             ValidateOnBuild = builderAttribute?.ValidateOnBuild ?? true,
             GenerateWithMethods = builderAttribute?.GenerateWithMethods ?? true,
             GenerateFromMethod = builderAttribute?.GenerateFromMethod ?? true,
             Accessibility = builderAttribute?.Accessibility ?? BuilderAccessibility.Public
         };
+
+        return new TypeToGenerateResult(typeToGenerate, diagnostics);
     }
-    
-    static PropertyToGenerate? CreatePropertyToGenerate(IPropertySymbol propertySymbol)
+
+    static PropertyToGenerateResult CreatePropertyToGenerate(IPropertySymbol propertySymbol)
     {
         var builderPropAttr = GetBuilderPropertyAttribute(propertySymbol);
         var collectionAttr = GetBuilderCollectionAttribute(propertySymbol);
+        var diagnostics = new List<DiagnosticInfo>();
 
-        if (builderPropAttr?.IgnoreInBuilder == true) return null;
+        if (builderPropAttr?.IgnoreInBuilder == true)
+            return new PropertyToGenerateResult(null, diagnostics);
 
         var isCollection = IsCollectionType(propertySymbol.Type);
         var hasSetter = propertySymbol.SetMethod != null;
 
-        return new PropertyToGenerate
+        // Validate validator method if specified
+        if (!string.IsNullOrEmpty(builderPropAttr?.ValidatorMethod))
+        {
+            var validatorMethod = FindValidatorMethod(propertySymbol.ContainingType, builderPropAttr.ValidatorMethod, propertySymbol.Type);
+            if (validatorMethod == null)
+            {
+                var location = propertySymbol.Locations.FirstOrDefault() ?? Location.None;
+                diagnostics.Add(new DiagnosticInfo(
+                    BuilderDiagnostics.InvalidValidatorMethod,
+                    location,
+                    builderPropAttr.ValidatorMethod,
+                    propertySymbol.Type.ToDisplayString()));
+            }
+        }
+
+        // Warn about unsupported property types
+        if (!IsSupportedPropertyType(propertySymbol.Type))
+        {
+            var location = propertySymbol.Locations.FirstOrDefault() ?? Location.None;
+            diagnostics.Add(new DiagnosticInfo(
+                BuilderDiagnostics.UnsupportedPropertyType,
+                location,
+                propertySymbol.Type.ToDisplayString()));
+        }
+
+        // Check for conflicting collection and property attributes
+        if (isCollection && builderPropAttr != null && collectionAttr != null)
+        {
+            var location = propertySymbol.Locations.FirstOrDefault() ?? Location.None;
+            diagnostics.Add(new DiagnosticInfo(
+                BuilderDiagnostics.ConflictingPropertyAttributes,
+                location,
+                propertySymbol.Name));
+        }
+
+        var property = new PropertyToGenerate
         {
             Name = propertySymbol.Name,
             TypeName = propertySymbol.Type.ToDisplayString(),
@@ -170,6 +281,39 @@ public class BuilderPatternGenerator : IIncrementalGenerator
             GenerateCountProperty = collectionAttr?.GenerateCountProperty ?? true,
             HasSetter = hasSetter
         };
+
+        return new PropertyToGenerateResult(property, diagnostics);
+    }
+
+    static bool HasNamingConflict(INamedTypeSymbol typeSymbol, string builderName)
+    {
+        // Check if builder name conflicts with existing types in the same namespace
+        var containingNamespace = typeSymbol.ContainingNamespace;
+        return containingNamespace.GetTypeMembers(builderName).Any();
+    }
+
+    static IMethodSymbol? FindValidatorMethod(INamedTypeSymbol containingType, string methodName, ITypeSymbol parameterType)
+    {
+        return containingType.GetMembers(methodName)
+            .OfType<IMethodSymbol>()
+            .FirstOrDefault(m =>
+                m.IsStatic &&
+                m.ReturnType.SpecialType == SpecialType.System_Boolean &&
+                m.Parameters.Length == 1 &&
+                SymbolEqualityComparer.Default.Equals(m.Parameters[0].Type, parameterType));
+    }
+
+    static bool IsSupportedPropertyType(ITypeSymbol type)
+    {
+        // Check for unsupported types like ref structs, pointers, etc.
+        if (type.IsRefLikeType || type.TypeKind == TypeKind.Pointer)
+            return false;
+
+        // Check for delegate types that might cause issues
+        if (type.TypeKind == TypeKind.Delegate)
+            return false;
+
+        return true;
     }
 
     static bool IsDictionaryType(ITypeSymbol type)
@@ -177,18 +321,18 @@ public class BuilderPatternGenerator : IIncrementalGenerator
         return type is INamedTypeSymbol namedType &&
                namedType.ConstructedFrom?.ToDisplayString() == "System.Collections.Generic.Dictionary<TKey, TValue>";
     }
-    
+
     static bool IsDictionaryType(string typeName)
     {
         return typeName.Contains("Dictionary<") || typeName.Contains("IDictionary<");
     }
-    
+
     // Add helper method to detect if property has setter
     static bool HasSetter(PropertyToGenerate prop)
     {
         return prop.HasSetter;
     }
-    
+
     static bool IsCollectionType(ITypeSymbol type)
     {
         // Exclude string and nullable types
@@ -225,34 +369,60 @@ public class BuilderPatternGenerator : IIncrementalGenerator
         return "object";
     }
 
-    static void Execute(TypeToGenerate typeToGenerate, SourceProductionContext context)
+    static void Execute(TypeToGenerateResult result, SourceProductionContext context)
     {
-        var sourceBuilder = new StringBuilder();
-
-        // Generate the builder class
-        sourceBuilder.AppendLine("// <auto-generated />");
-        sourceBuilder.AppendLine("using System;");
-        sourceBuilder.AppendLine("using System.Collections.Generic;");
-        sourceBuilder.AppendLine("using System.Linq;");
-        sourceBuilder.AppendLine();
-
-        if (!string.IsNullOrEmpty(typeToGenerate.Namespace))
+        // Report all accumulated diagnostics
+        foreach (var diagnosticInfo in result.Diagnostics)
         {
-            sourceBuilder.AppendLine($"namespace {typeToGenerate.Namespace}");
-            sourceBuilder.AppendLine("{");
+            var diagnostic = Diagnostic.Create(
+                diagnosticInfo.Descriptor,
+                diagnosticInfo.Location,
+                diagnosticInfo.Args);
+            context.ReportDiagnostic(diagnostic);
         }
 
-        GenerateBuilderClass(sourceBuilder, typeToGenerate);
-    
-        // Generate extension methods at namespace level (not nested)
-        GenerateExtensionMethods(sourceBuilder, typeToGenerate);
+        // Skip generation if no valid type to generate
+        if (result.TypeToGenerate == null) return;
 
-        if (!string.IsNullOrEmpty(typeToGenerate.Namespace))
+        try
         {
-            sourceBuilder.AppendLine("}");
-        }
+            var sourceBuilder = new StringBuilder();
 
-        context.AddSource($"{typeToGenerate.BuilderName}.g.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
+            // Generate the builder class
+            sourceBuilder.AppendLine("// <auto-generated />");
+            sourceBuilder.AppendLine("using System;");
+            sourceBuilder.AppendLine("using System.Collections.Generic;");
+            sourceBuilder.AppendLine("using System.Linq;");
+            sourceBuilder.AppendLine();
+
+            if (!string.IsNullOrEmpty(result.TypeToGenerate.Namespace))
+            {
+                sourceBuilder.AppendLine($"namespace {result.TypeToGenerate.Namespace}");
+                sourceBuilder.AppendLine("{");
+            }
+
+            GenerateBuilderClass(sourceBuilder, result.TypeToGenerate);
+
+            // Generate extension methods at namespace level (not nested)
+            GenerateExtensionMethods(sourceBuilder, result.TypeToGenerate);
+
+            if (!string.IsNullOrEmpty(result.TypeToGenerate.Namespace))
+            {
+                sourceBuilder.AppendLine("}");
+            }
+
+            context.AddSource($"{result.TypeToGenerate.BuilderName}.g.cs", SourceText.From(sourceBuilder.ToString(), Encoding.UTF8));
+        }
+        catch (Exception ex)
+        {
+            // Report code generation errors
+            var diagnostic = Diagnostic.Create(
+                BuilderDiagnostics.CodeGenerationError,
+                Location.None,
+                result.TypeToGenerate.Name,
+                ex.Message);
+            context.ReportDiagnostic(diagnostic);
+        }
     }
 
     static void GenerateBuilderClass(StringBuilder sb, TypeToGenerate type)
@@ -438,80 +608,80 @@ public class BuilderPatternGenerator : IIncrementalGenerator
         }
     }
 
-static void GenerateBuildMethod(StringBuilder sb, TypeToGenerate type)
-{
-    sb.AppendLine($"        public {type.Name} Build()");
-    sb.AppendLine("        {");
-
-    if (type.ValidateOnBuild)
+    static void GenerateBuildMethod(StringBuilder sb, TypeToGenerate type)
     {
-        var requiredProps = type.Properties.Where(p => p.IsRequired).ToList();
-        if (requiredProps.Any())
+        sb.AppendLine($"        public {type.Name} Build()");
+        sb.AppendLine("        {");
+
+        if (type.ValidateOnBuild)
         {
-            foreach (var prop in requiredProps)
+            var requiredProps = type.Properties.Where(p => p.IsRequired).ToList();
+            if (requiredProps.Any())
             {
-                sb.AppendLine($"            if (!_{CamelCase(prop.Name)}Set)");
-                sb.AppendLine($"                throw new InvalidOperationException(\"Required property '{prop.Name}' has not been set\");");
-            }
-            sb.AppendLine();
-        }
-    }
-
-    // Check if properties have setters (init or set) - use object initializer
-    // If only get properties - use constructor
-    bool hasSettableProperties = type.Properties.Any(p => HasSetter(p));
-
-    if (hasSettableProperties)
-    {
-        sb.AppendLine($"            return new {type.Name}");
-        sb.AppendLine("            {");
-
-        foreach (var prop in type.Properties)
-        {
-            if (prop.IsCollection)
-            {
-                if (prop.TypeName.Contains("ReadOnly"))
+                foreach (var prop in requiredProps)
                 {
-                    sb.AppendLine($"                {prop.Name} = _{CamelCase(prop.Name)}.AsReadOnly(),");
+                    sb.AppendLine($"            if (!_{CamelCase(prop.Name)}Set)");
+                    sb.AppendLine($"                throw new InvalidOperationException(\"Required property '{prop.Name}' has not been set\");");
                 }
-                else
-                {
-                    sb.AppendLine($"                {prop.Name} = _{CamelCase(prop.Name)}.ToList(),");
-                }
-            }
-            else
-            {
-                sb.AppendLine($"                {prop.Name} = _{CamelCase(prop.Name)},");
+                sb.AppendLine();
             }
         }
 
-        sb.AppendLine("            };");
-    }
-    else
-    {
-        // Use constructor for classes with only get properties
-        sb.AppendLine($"            return new {type.Name}(");
-        var parameters = type.Properties.Select(p =>
-        {
-            if (p.IsCollection)
-            {
-                if (p.TypeName.Contains("ReadOnly"))
-                    return $"_{CamelCase(p.Name)}.ToList()";
-                else
-                    return $"_{CamelCase(p.Name)}.ToList()";
-            }
-            else
-            {
-                return $"_{CamelCase(p.Name)}";
-            }
-        });
-        sb.AppendLine($"                {string.Join(",\n                ", parameters)}");
-        sb.AppendLine("            );");
-    }
+        // Check if properties have setters (init or set) - use object initializer
+        // If only get properties - use constructor
+        bool hasSettableProperties = type.Properties.Any(p => HasSetter(p));
 
-    sb.AppendLine("        }");  // This closing bracket was missing!
-    sb.AppendLine();
-}
+        if (hasSettableProperties)
+        {
+            sb.AppendLine($"            return new {type.Name}");
+            sb.AppendLine("            {");
+
+            foreach (var prop in type.Properties)
+            {
+                if (prop.IsCollection)
+                {
+                    if (prop.TypeName.Contains("ReadOnly"))
+                    {
+                        sb.AppendLine($"                {prop.Name} = _{CamelCase(prop.Name)}.AsReadOnly(),");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"                {prop.Name} = _{CamelCase(prop.Name)}.ToList(),");
+                    }
+                }
+                else
+                {
+                    sb.AppendLine($"                {prop.Name} = _{CamelCase(prop.Name)},");
+                }
+            }
+
+            sb.AppendLine("            };");
+        }
+        else
+        {
+            // Use constructor for classes with only get properties
+            sb.AppendLine($"            return new {type.Name}(");
+            var parameters = type.Properties.Select(p =>
+            {
+                if (p.IsCollection)
+                {
+                    if (p.TypeName.Contains("ReadOnly"))
+                        return $"_{CamelCase(p.Name)}.ToList()";
+                    else
+                        return $"_{CamelCase(p.Name)}.ToList()";
+                }
+                else
+                {
+                    return $"_{CamelCase(p.Name)}";
+                }
+            });
+            sb.AppendLine($"                {string.Join(",\n                ", parameters)}");
+            sb.AppendLine("            );");
+        }
+
+        sb.AppendLine("        }");
+        sb.AppendLine();
+    }
 
     static void GenerateValidationMethods(StringBuilder sb, TypeToGenerate type)
     {
@@ -539,7 +709,7 @@ static void GenerateBuildMethod(StringBuilder sb, TypeToGenerate type)
 
         // Close the builder class first
         sb.AppendLine();
-    
+
         // Generate extension class at namespace level
         sb.AppendLine($"    public static class {type.Name}Extensions");
         sb.AppendLine("    {");
@@ -547,11 +717,11 @@ static void GenerateBuildMethod(StringBuilder sb, TypeToGenerate type)
         sb.AppendLine($"            {type.BuilderName}.From(source);");
         sb.AppendLine("    }");
     }
-    
+
     static void GenerateDictionaryMethods(StringBuilder sb, TypeToGenerate type, PropertyToGenerate prop)
     {
         var paramName = CamelCase(prop.Name);
-    
+
         // With method for entire dictionary
         sb.AppendLine($"        public {type.BuilderName} With{prop.Name}({prop.TypeName} {paramName})");
         sb.AppendLine("        {");
