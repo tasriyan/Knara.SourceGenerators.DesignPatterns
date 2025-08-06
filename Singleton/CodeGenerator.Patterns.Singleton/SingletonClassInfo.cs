@@ -10,6 +10,18 @@ public enum SingletonStrategy
     DoubleCheckedLocking = 3
 }
 
+public class SingletonClassInfoResult
+{
+	public SingletonClassInfo? SingletonClassInfo { get; }
+	public List<DiagnosticInfo> Diagnostics { get; }
+
+	public SingletonClassInfoResult(SingletonClassInfo? singletonClassInfo, List<DiagnosticInfo> diagnostics)
+	{
+		SingletonClassInfo = singletonClassInfo;
+		Diagnostics = diagnostics ?? [];
+	}
+}
+
 public class SingletonClassInfo
 {
     public string ClassName { get; }

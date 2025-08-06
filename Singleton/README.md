@@ -1,6 +1,7 @@
-﻿# Singleton Pattern Source Generator
+﻿# Declarative Singleton Generator
 
-A C# source generator that automatically implements the Singleton design pattern with multiple strategies, thread-safety options, and advanced features like generic support and dependency injection integration.
+A C# source generator that retrofits existing classes with the Singleton design pattern using declarative attributes.
+Implemented for multiple strategies support, thread-safety options, and advanced features like generic support and dependency injection integration.
 
 ## Features
 
@@ -12,10 +13,16 @@ A C# source generator that automatically implements the Singleton design pattern
 - **High Performance**: Optimized implementations with minimal overhead
 - **Incremental Generation**: Fast compilation times with incremental source generation
 
-## Installation
+Add the source generator to your project:
 ```bash
-<PackageReference Include="SourceGenerators.DesignPatterns.Singleton" Version="1.0.0" />
+<ItemGroup> <ProjectReference Include="path/to/SourceGenerators.DesignPatterns.Singleton.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
 ```
+
+Or via NuGet (when published): 
+```bash
+dotnet add package SourceGenerators.DesignPatterns.Singleton
+```
+
 ## Quick Start
 
 Simply add the `[Singleton]` attribute to any partial class:[Singleton] 

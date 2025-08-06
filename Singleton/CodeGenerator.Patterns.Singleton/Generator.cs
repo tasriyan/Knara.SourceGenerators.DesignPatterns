@@ -62,32 +62,50 @@ namespace CodeGenerator.Patterns.Singleton
         // Get classes with the Singleton attribute
         var singletonClasses = context.SyntaxProvider
             .CreateSyntaxProvider(
-                predicate: static (s, _) => IsPartialClassWithSingletonAttribute(s),
+                predicate: static (s, _) => IsClassWithSingletonAttribute(s),
                 transform: static (ctx, _) => GetSingletonClassInfo(ctx))
             .Where(static m => m is not null);
 
-        context.RegisterSourceOutput(singletonClasses, static (spc, source) => GenerateSingletonImplementation(spc, source));
+        context.RegisterSourceOutput(singletonClasses, static (spc, source) => GenerateSingletonImplementation(spc, source!));
     }
 
-    private static bool IsPartialClassWithSingletonAttribute(SyntaxNode node)
+    private static bool IsClassWithSingletonAttribute(SyntaxNode node)
     {
-        return node is ClassDeclarationSyntax cls && 
-               cls.AttributeLists.Count > 0 && 
-               cls.Modifiers.Any(SyntaxKind.PartialKeyword);
+        return node is ClassDeclarationSyntax cls && cls.AttributeLists.Count > 0;
     }
 
-    private static SingletonClassInfo? GetSingletonClassInfo(GeneratorSyntaxContext context)
+    private static SingletonClassInfoResult? GetSingletonClassInfo(GeneratorSyntaxContext context)
     {
         var classDecl = (ClassDeclarationSyntax)context.Node;
         var model = context.SemanticModel;
         var symbol = model.GetDeclaredSymbol(classDecl);
+        var diagnostics = new List<DiagnosticInfo>();
 
-        if (symbol == null) return null;
+        if (symbol == null) 
+        {
+            var location = classDecl.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                SingletonDiagnostics.TypeSymbolNotResolved,
+                location,
+                classDecl.Identifier.Text));
+            return new SingletonClassInfoResult(null, diagnostics);
+        }
 
         var singletonAttr = symbol.GetAttributes()
             .FirstOrDefault(attr => attr.AttributeClass?.Name == "SingletonAttribute");
 
         if (singletonAttr == null) return null;
+
+        // Check if class is partial
+        if (!classDecl.Modifiers.Any(SyntaxKind.PartialKeyword))
+        {
+            var location = classDecl.GetLocation();
+            diagnostics.Add(new DiagnosticInfo(
+                SingletonDiagnostics.ClassNotPartial,
+                location,
+                symbol.Name));
+            return new SingletonClassInfoResult(null, diagnostics);
+        }
 
         // Parse attribute properties
         var strategy = SingletonStrategy.LockFree;
@@ -128,15 +146,51 @@ namespace CodeGenerator.Patterns.Singleton
             }
         }
 
+        // Validate configuration conflicts
+        ValidateConfiguration(symbol, strategy, lazyInitialization, threadSafe, diagnostics, classDecl.GetLocation());
+
         // Check if class has Initialize method
         var hasInitializeMethod = symbol.GetMembers("Initialize")
             .OfType<IMethodSymbol>()
             .Any(m => m.Parameters.IsEmpty && m.ReturnsVoid);
 
-        // Check if class has factory method
-        var hasFactoryMethod = symbol.GetMembers(factoryMethodName)
-            .OfType<IMethodSymbol>()
-            .Any(m => m.IsStatic && m.Parameters.IsEmpty);
+        // Check factory method if UseFactory is true
+        var hasFactoryMethod = false;
+        if (useFactory)
+        {
+            var factoryMethods = symbol.GetMembers(factoryMethodName).OfType<IMethodSymbol>().ToList();
+            
+            if (!factoryMethods.Any())
+            {
+                var location = classDecl.GetLocation();
+                diagnostics.Add(new DiagnosticInfo(
+                    SingletonDiagnostics.MissingFactoryMethod,
+                    location,
+                    symbol.Name,
+                    factoryMethodName));
+            }
+            else
+            {
+                var validFactoryMethod = factoryMethods.FirstOrDefault(m => 
+                    m.IsStatic && 
+                    m.Parameters.IsEmpty && 
+                    SymbolEqualityComparer.Default.Equals(m.ReturnType, symbol));
+
+                if (validFactoryMethod != null)
+                {
+                    hasFactoryMethod = true;
+                }
+                else
+                {
+                    var location = classDecl.GetLocation();
+                    diagnostics.Add(new DiagnosticInfo(
+                        SingletonDiagnostics.InvalidFactoryMethodSignature,
+                        location,
+                        factoryMethodName,
+                        symbol.Name));
+                }
+            }
+        }
 
         // Check if class is generic
         var isGeneric = symbol.TypeParameters.Length > 0;
@@ -146,7 +200,13 @@ namespace CodeGenerator.Patterns.Singleton
             .Where(c => !string.IsNullOrEmpty(c))
             .ToList();
 
-        return new SingletonClassInfo(
+        // Check for generic constraint warnings
+        if (isGeneric)
+        {
+            ValidateGenericConstraints(symbol, strategy, diagnostics, classDecl.GetLocation());
+        }
+
+        var singletonInfo = new SingletonClassInfo(
             symbol.Name,
             symbol.ContainingNamespace?.ToDisplayString() ?? "",
             strategy,
@@ -160,6 +220,62 @@ namespace CodeGenerator.Patterns.Singleton
             isGeneric,
             typeParameters,
             typeConstraints);
+
+        return new SingletonClassInfoResult(singletonInfo, diagnostics);
+    }
+
+    private static void ValidateConfiguration(INamedTypeSymbol symbol, SingletonStrategy strategy, bool lazyInitialization, bool threadSafe, List<DiagnosticInfo> diagnostics, Location location)
+    {
+        var conflicts = new List<string>();
+
+        // Eager strategy with lazy initialization doesn't make sense
+        if (strategy == SingletonStrategy.Eager && lazyInitialization)
+        {
+            conflicts.Add("Eager strategy cannot use lazy initialization");
+        }
+
+        // Non-thread-safe with certain strategies
+        if (!threadSafe && (strategy == SingletonStrategy.LockFree || strategy == SingletonStrategy.DoubleCheckedLocking))
+        {
+            conflicts.Add($"{strategy} strategy requires ThreadSafe=true");
+        }
+
+        if (conflicts.Any())
+        {
+            diagnostics.Add(new DiagnosticInfo(
+                SingletonDiagnostics.ConflictingConfiguration,
+                location,
+                symbol.Name,
+                string.Join(", ", conflicts)));
+        }
+    }
+
+    private static void ValidateGenericConstraints(INamedTypeSymbol symbol, SingletonStrategy strategy, List<DiagnosticInfo> diagnostics, Location location)
+    {
+        foreach (var typeParam in symbol.TypeParameters)
+        {
+            // Warn about value type constraints with certain strategies
+            if (typeParam.HasValueTypeConstraint && strategy == SingletonStrategy.LockFree)
+            {
+                diagnostics.Add(new DiagnosticInfo(
+                    SingletonDiagnostics.GenericConstraintWarning,
+                    location,
+                    symbol.Name,
+                    strategy.ToString(),
+                    "struct constraint"));
+            }
+
+            // Warn about constructor constraints with factory methods
+            if (typeParam.HasConstructorConstraint && symbol.GetMembers().OfType<IMethodSymbol>().Any(m => m.IsStatic && m.Name.Contains("Create")))
+            {
+                diagnostics.Add(new DiagnosticInfo(
+                    SingletonDiagnostics.GenericConstraintWarning,
+                    location,
+                    symbol.Name,
+                    strategy.ToString(),
+                    "new() constraint with factory method"));
+            }
+        }
     }
 
     private static string GetTypeConstraints(ITypeParameterSymbol typeParameter)
@@ -186,18 +302,40 @@ namespace CodeGenerator.Patterns.Singleton
         return constraints.Any() ? $"where {typeParameter.Name} : {string.Join(", ", constraints)}" : "";
     }
 
-    private static void GenerateSingletonImplementation(SourceProductionContext context, SingletonClassInfo? singletonInfo)
+    private static void GenerateSingletonImplementation(SourceProductionContext context, SingletonClassInfoResult result)
     {
-        if (singletonInfo == null) return;
-
-        var source = GenerateSingletonClass(singletonInfo);
-        context.AddSource($"{singletonInfo.ClassName}.Singleton.g.cs", SourceText.From(source, Encoding.UTF8));
-
-        // Generate DI extension methods if requested
-        if (singletonInfo.RegisterInDI)
+        // Report all diagnostics first
+        foreach (var diagnostic in result.Diagnostics)
         {
-            var diSource = GenerateDIExtensions(singletonInfo);
-            context.AddSource($"{singletonInfo.ClassName}.DI.g.cs", SourceText.From(diSource, Encoding.UTF8));
+            context.ReportDiagnostic(Diagnostic.Create(
+                diagnostic.Descriptor,
+                diagnostic.Location,
+                diagnostic.Args));
+        }
+
+        // Skip generation if no valid singleton info
+        if (result.SingletonClassInfo == null) return;
+
+        try
+        {
+            var source = GenerateSingletonClass(result.SingletonClassInfo);
+            context.AddSource($"{result.SingletonClassInfo.ClassName}.Singleton.g.cs", SourceText.From(source, Encoding.UTF8));
+
+            // Generate DI extension methods if requested
+            if (result.SingletonClassInfo.RegisterInDI)
+            {
+                var diSource = GenerateDIExtensions(result.SingletonClassInfo);
+                context.AddSource($"{result.SingletonClassInfo.ClassName}.DI.g.cs", SourceText.From(diSource, Encoding.UTF8));
+            }
+        }
+        catch (System.Exception ex)
+        {
+            // Report any code generation errors
+            context.ReportDiagnostic(Diagnostic.Create(
+				SingletonDiagnostics.CodeGenerationError,
+                Location.None,
+                result.SingletonClassInfo.ClassName,
+                ex.Message));
         }
     }
 
@@ -411,5 +549,4 @@ namespace CodeGenerator.Patterns.Singleton
 
         return sb.ToString();
     }
-    
 }
