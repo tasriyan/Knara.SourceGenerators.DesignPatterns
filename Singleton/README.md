@@ -302,3 +302,9 @@ public partial class MyService
 ---
 
 *This generator helps create reliable singleton implementations for legacy .NET Framework applications where dependency injection is not available.*
+
+---
+
+## License
+
+Apache License 2.0
