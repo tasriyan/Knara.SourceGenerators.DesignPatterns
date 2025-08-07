@@ -1,65 +1,53 @@
-﻿using CodeGenerator.Patterns.Singleton;
+﻿using System.Collections.Concurrent;
+using CodeGenerator.Patterns.Singleton;
 
 namespace Singleton.UnitTests.UseCases;
 
 // BASIC SINGLETON - Simple, thread-safe, lazy initialization
-[Singleton]
+[Singleton(Strategy = SingletonStrategy.Lazy)]
 public partial class ConfigurationManager
 {
-    private Dictionary<string, string> _settings;
-
-    private void Initialize()
+    private readonly ConcurrentDictionary<string, string> _settings = new ConcurrentDictionary<string, string>
     {
-        // This method is called once during singleton creation
-        _settings = new Dictionary<string, string>
-        {
-            ["Environment"] = "Production",
-            ["Version"] = "1.0.0",
-            ["DatabaseTimeout"] = "30"
-        };
-        
+        ["Environment"] = "Production",
+        ["Version"] = "1.0.0",
+        ["DatabaseTimeout"] = "30"
+    };
+
+    private ConfigurationManager()
+    {
         Console.WriteLine("ConfigurationManager initialized");
+    }
+    
+    public void LoadSettings()
+    {
+        // Simulate loading settings from a file or database
+        Console.WriteLine("Loading settings...");
+        _settings["Environment"] = "Development";
+        _settings["Version"] = "1.0.1";
+        _settings["DatabaseTimeout"] = "60";
     }
 
     public string GetSetting(string key) => _settings.TryGetValue(key, out var value) ? value : "";
     public void SetSetting(string key, string value) => _settings[key] = value;
+    
+    public static void LogMessage(string message)
+    {
+        Console.WriteLine($"Logging message... {message}");;
+    }
 }
 
-//CONVERTED TO SINGLETON
+// GENERATED CONVERSION TO SINGLETON
 partial class ConfigurationManager
 {
-    private static volatile ConfigurationManager? _instance;
-    private static int _isInitialized = 0;
+    private static readonly Lazy<ConfigurationManager> _lazy =
+        new Lazy<ConfigurationManager>(CreateSingletonInstance);
 
-    public static ConfigurationManager Instance
-    {
-        get
-        {
-            if (_instance != null) return _instance; // Fast path
-            return GetOrCreateInstance();
-        }
-    }
-
-    private static ConfigurationManager GetOrCreateInstance()
-    {
-        if (Interlocked.CompareExchange(ref _isInitialized, 1, 0) == 0)
-        {
-            // We won the race - create the instance
-            var newInstance = CreateSingletonInstance();
-            Interlocked.Exchange(ref _instance, newInstance); // Atomic assignment with memory barrier
-        }
-        else
-        {
-            // Another thread is creating the instance - spin wait
-            SpinWait.SpinUntil(() => _instance != null);
-        }
-        return _instance!;
-    }
+    public static ConfigurationManager Instance => _lazy.Value;
 
     private static ConfigurationManager CreateSingletonInstance()
     {
         var instance = new ConfigurationManager();
-        instance.Initialize();
         return instance;
     }
 }

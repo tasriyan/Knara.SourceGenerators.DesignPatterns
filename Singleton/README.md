@@ -1,343 +1,304 @@
-﻿# Declarative Singleton Generator
+﻿# Singleton Pattern Generator
 
-A C# source generator that retrofits existing classes with the Singleton design pattern using declarative attributes.
-Implemented for multiple strategies support, thread-safety options, and advanced features like generic support and dependency injection integration.
+A C# source generator that creates thread-safe singleton implementations for .NET Framework applications. Automatically generates correct singleton code and validates thread safety to prevent common concurrency bugs.
 
-## Features
+## Why This Generator Exists
 
-- **Multiple Implementation Strategies**: Choose from 4 different singleton patterns optimized for different scenarios
-- **Thread-Safe by Default**: All implementations are thread-safe with configurable options
-- **Generic Support**: Full support for generic singleton classes with type constraints
-- **Factory Method Integration**: Support for complex initialization scenarios
-- **Dependency Injection Ready**: Automatic DI container registration
-- **High Performance**: Optimized implementations with minimal overhead
-- **Incremental Generation**: Fast compilation times with incremental source generation
+**Problem**: Manual singleton implementations are error-prone and often contain race conditions that cause intermittent bugs in production. Without dependency injection containers (available in .NET Framework 4.x), singletons are essential for managing shared state.
 
-Add the source generator to your project:
-```bash
-<ItemGroup> <ProjectReference Include="path/to/SourceGenerators.DesignPatterns.Singleton.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
-```
-
-Or via NuGet (when published): 
-```bash
-dotnet add package SourceGenerators.DesignPatterns.Singleton
-```
+**Solution**: Generate proven, thread-safe singleton implementations automatically with built-in validation for common concurrency issues.
 
 ## Quick Start
 
-Simply add the `[Singleton]` attribute to any partial class:[Singleton] 
-```csharp
-public partial class ConfigurationManager
-{ 
-    private Dictionary<string, string> _settings;
-    private void Initialize()
-    {
-        _settings = new Dictionary<string, string>
-        {
-            ["Environment"] = "Production",
-            ["Version"] = "1.0.0"
-        };
-    }
+1. Add the `[Singleton]` attribute to your partial class
+2. Make sure your class has a private constructor
+3. The generator creates the singleton implementation automatically
 
-    public string GetSetting(string key) => _settings.TryGetValue(key, out var value) ? value : "";
+```csharp
+using CodeGenerator.Patterns.Singleton;
+
+[Singleton(Strategy = SingletonStrategy.Lazy)]
+public partial class ConfigurationManager
+{
+    private ConfigurationManager() { } // Private constructor required
+    
+    public string GetSetting(string key) { /* your code */ }
 }
 
-// Usage 
+// Usage
 var config = ConfigurationManager.Instance;
+string setting = config.GetSetting("DatabaseTimeout");
 ```
 
 ## Singleton Strategies
 
-### 1. Lock-Free (Default)
-**Best for**: High-throughput, read-heavy scenarios
+Choose the right strategy based on your use case:
 
-#### Pros:
-- ✅ **Excellent Performance**: Uses `Interlocked.CompareExchange` for near lock-free operation
-- ✅ **Low Contention**: Minimal thread blocking with optimistic concurrency
-- ✅ **Fast Path Optimization**: Once initialized, access is just a null check
-- ✅ **Memory Efficient**: Uses volatile fields and memory barriers effectively
-- ✅ **Scalable**: Performance doesn't degrade significantly under high concurrency
+### 1. Lazy (Default) - `SingletonStrategy.Lazy`
+**When to use**: Most general-purpose scenarios
+**Performance**: Good initialization, good access speed
+**Memory**: Minimal overhead
 
-#### Cons:
-- ❌ **Complexity**: More complex implementation than other strategies
-- ❌ **Spin-Wait**: Threads may briefly spin-wait during initialization
 ```csharp
-[Singleton(Strategy = SingletonStrategy.LockFree)] 
-public partial class MetricsCollector 
-{ 
-    // Ultra-fast access with Interlocked operations 
+[Singleton(Strategy = SingletonStrategy.Lazy)]
+public partial class ConfigurationManager
+{
+    private readonly ConcurrentDictionary<string, string> _settings = new();
+    private ConfigurationManager() { }
 }
 ```
 
-### 2. Lazy<T>
-**Best for**: Simple scenarios with good performance
+**Best for:**
+- Configuration managers
+- Service registries
+- Non-performance-critical singletons
 
-#### Pros:
-- ✅ **Simple**: Leverages .NET's proven `Lazy<T>` implementation
-- ✅ **Thread-Safe**: Built-in thread safety with no custom synchronization code
-- ✅ **Lazy Loading**: Defers initialization until first access
-- ✅ **Exception Safe**: Handles initialization exceptions gracefully
-- ✅ **Reliable**: Well-tested framework implementation
+### 2. Eager - `SingletonStrategy.Eager`
+**When to use**: When you need the instance ready immediately at startup
+**Performance**: Fastest access (no initialization checks)
+**Memory**: Instance created at application start
 
-#### Cons:
-- ❌ **Moderate Performance**: Slightly slower than lock-free due to internal locking
-- ❌ **Memory Overhead**: Additional `Lazy<T>` wrapper object
-- ❌ **Less Control**: Can't customize the synchronization behavior
 ```csharp
-[Singleton(Strategy = SingletonStrategy.Lazy)] 
-public partial class SimpleService 
-{ 
-    // Uses .NET's Lazy<T> for thread-safe initialization 
-}
-```
-
-### 3. Double-Checked Locking
-**Best for**: Classic pattern, balanced performance, works well with generics
-
-#### Pros:
-- ✅ **Proven Pattern**: Well-established, widely understood implementation
-- ✅ **Good Performance**: Fast path after initialization with minimal overhead
-- ✅ **Generic-Friendly**: Works excellently with generic classes
-- ✅ **Predictable**: Clear synchronization semantics with locks
-- ✅ **Low Memory**: Minimal memory overhead
-
-#### Cons:
-- ❌ **Lock Overhead**: Uses locks during initialization phase
-- ❌ **Potential Contention**: Multiple threads may block on the lock
-- ❌ **Volatile Requirement**: Requires volatile field for correctness
-- ❌ **Platform Sensitivity**: Memory model considerations on some platforms
-```csharp
-[Singleton(Strategy = SingletonStrategy.DoubleCheckedLocking)] 
-public partial class Repository<T> where T : class, new() 
-{ 
-    // Traditional double-checked locking pattern 
-}
-```
-### 4. Eager Initialization
-**Best for**: Ultra-fast access, startup initialization acceptable
-
-#### Pros:
-- ✅ **Fastest Access**: Zero synchronization overhead after type initialization
-- ✅ **Thread-Safe**: CLR guarantees thread-safe static initialization
-- ✅ **Simple**: Straightforward implementation with no complex synchronization
-- ✅ **Predictable Timing**: Initialization happens at predictable time (type load)
-- ✅ **No Lazy Loading Issues**: Instance is always ready
-
-#### Cons:
-- ❌ **Startup Cost**: Initialization happens whether instance is used or not
-- ❌ **Memory Usage**: Instance created immediately, consuming memory early
-- ❌ **Initialization Order**: Can cause issues with complex dependency chains
-- ❌ **Exception Handling**: Initialization exceptions can be harder to handle
-- ❌ **No Lazy Benefits**: Can't defer expensive initialization
-```csharp
-[Singleton(Strategy = SingletonStrategy.Eager)] 
-public partial class Logger 
-{ 
-    // Pre-initialized at application startup 
-}
-```
-
-## Strategy Comparison Matrix
-
-| Strategy | Access Speed | Initialization | Memory Usage | Complexity | Best Use Case |
-|----------|-------------|----------------|--------------|------------|---------------|
-| **Lock-Free** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐ | High-throughput services |
-| **Lazy<T>** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | General purpose, simple cases |
-| **Double-Checked** | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ | Generic classes, balanced needs |
-| **Eager** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐⭐ | Critical path, fast access required |
-
-
-## Advanced Features
-
-### Generic Singletons
-Full support for generic classes with type constraints:
-```csharp
-[Singleton(Strategy = SingletonStrategy.DoubleCheckedLocking)] 
-public partial class Repository<T> where T : class, new() 
-{ 
-    private readonly List<T> _items = [];
-    private void Initialize()
+[Singleton(Strategy = SingletonStrategy.Eager)]
+public partial class Logger
+{
+    private readonly string _logFilePath;
+    private Logger() 
     {
-        Console.WriteLine($"Repository<{typeof(T).Name}> initialized");
+        _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.log");
     }
-
-    public void Add(T item) => _items.Add(item);
-    public IReadOnlyList<T> GetAll() => _items.AsReadOnly();
 }
-// Usage 
-var userRepo = Repository<User>.Instance; 
+```
+
+**Best for:**
+- Logging systems
+- Critical infrastructure components
+- Components needed immediately at startup
+
+### 3. LockFree - `SingletonStrategy.LockFree`
+**When to use**: High-performance scenarios with frequent access
+**Performance**: Fastest for read-heavy workloads
+**Memory**: Minimal locking overhead
+
+```csharp
+[Singleton(Strategy = SingletonStrategy.LockFree)]
+public partial class MetricsCollector
+{
+    private readonly ConcurrentDictionary<string, long> _counters = new();
+    private MetricsCollector() { }
+}
+```
+
+**Best for:**
+- Metrics collection
+- Caching systems
+- High-frequency data access
+
+### 4. DoubleCheckedLocking - `SingletonStrategy.DoubleCheckedLocking`
+**When to use**: When you need precise control over initialization timing
+**Performance**: Good balance of speed and memory efficiency
+**Memory**: Standard locking overhead
+
+```csharp
+[Singleton(Strategy = SingletonStrategy.DoubleCheckedLocking)]
+public partial class DbConnectionPool
+{
+    private readonly ConcurrentQueue<IDbConnection> _connections = new();
+    private DbConnectionPool() { }
+}
+```
+
+**Best for:**
+- Database connection pools
+- Resource managers
+- Components with expensive initialization
+
+## Thread Safety Validation
+
+The generator automatically checks for common thread safety issues:
+
+### ❌ Dangerous Collections
+```csharp
+[Singleton]
+public partial class BadExample
+{
+    private Dictionary<string, int> _data = new(); // ❌ Will generate warning
+    private List<string> _items = new();           // ❌ Will generate warning
+}
+```
+
+### ✅ Thread-Safe Alternatives
+```csharp
+[Singleton]
+public partial class GoodExample
+{
+    private ConcurrentDictionary<string, int> _data = new(); // ✅ Thread-safe
+    private ConcurrentBag<string> _items = new();            // ✅ Thread-safe
+}
+```
+
+## Generic Singletons
+
+The generator supports generic singletons with constraints:
+
+```csharp
+[Singleton(Strategy = SingletonStrategy.DoubleCheckedLocking)]
+public partial class Repository<T> where T : IEntity
+{
+    private readonly ConcurrentBag<T> _items = new();
+    private Repository() { }
+    
+    public void Add(T item) => _items.Add(item);
+    public IReadOnlyList<T> GetAll() => _items.ToList().AsReadOnly();
+}
+
+// Usage
+var userRepo = Repository<User>.Instance;
 var productRepo = Repository<Product>.Instance;
 ```
 
-### Factory Method Support
-For complex initialization scenarios:
+## Initialization Support
+
+Add an `Initialize()` method for post-construction setup:
+
 ```csharp
-[Singleton(Strategy = SingletonStrategy.LockFree, UseFactory = true)] 
-public partial class DatabaseConnectionPool 
-{ 
-    private readonly string _connectionString; 
-    private readonly int _maxPoolSize;
-    public static DatabaseConnectionPool CreateInstance()
-    {
-        var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
-                            ?? "Server=localhost;Database=MyApp;";
-        var maxPoolSize = int.Parse(Environment.GetEnvironmentVariable("POOL_SIZE") ?? "10");
+[Singleton]
+public partial class CacheManager
+{
+    private CacheManager() { }
     
-        return new DatabaseConnectionPool(connectionString, maxPoolSize);
-    }
-
-    private DatabaseConnectionPool(string connectionString, int maxPoolSize)
+    private void Initialize()
     {
-        _connectionString = connectionString;
-        _maxPoolSize = maxPoolSize;
-        // Complex initialization logic...
+        // Called automatically after instance creation
+        _ = Task.Run(CleanupExpiredEntries);
+        Console.WriteLine("Cache cleanup task started");
     }
 }
 ```
-### Dependency Injection Integration
-Automatic registration with DI containers:
-```csharp
-[Singleton(Strategy = SingletonStrategy.LockFree, RegisterInDI = true)] 
-public partial class CacheManager 
-{ 
-    // Automatically generates extension methods for IServiceCollection 
-}
-// In Startup.cs or Program.cs 
-services.AddCacheManagerSingleton();
-```
-## Configuration Options
-```csharp
-[Singleton( 
-    Strategy = SingletonStrategy.LockFree,  // Implementation strategy 
-    LazyInitialization = true,              // Defer initialization (ignored for Eager) 
-    ThreadSafe = true,                      // Thread-safety (default: true) 
-    RegisterInDI = false,                   // Generate DI extensions (default: false) 
-    UseFactory = false,                     // Use factory method (default: false) 
-    FactoryMethodName = "CreateInstance"    // Factory method name (default: "CreateInstance") 
-    )] 
-public partial class MyService { }
-```
-## Performance Benchmarks
-
-Based on comprehensive benchmarks running on .NET 9.0.7 (Intel Core i7-10750H):
-
-### Runtime Performance
-| Scenario | Mean Time | Memory Allocated | Strategy Recommendation |
-|----------|-----------|------------------|------------------------|
-| Simple Class | 300.4 μs | 87.44 KB | Lock-Free (default) |
-| Complex Class | 368.2 μs | 95.24 KB | Lock-Free |
-| Generic Class | 389.0 μs | 98.70 KB | Double-Checked Locking |
-| Multiple Singletons | 459.2 μs | 126.61 KB | Lock-Free |
-| All Strategies | 18.4 ms | 638.7 KB | Strategy-specific optimization |
-| With DI Registration | 18.2 ms | 622.0 KB | Lock-Free with DI |
-| Incremental Generation | 481.0 μs | 148.94 KB | Fast incremental builds |
-
-### Code Generation Performance
-| Feature | Mean Time | Memory Usage | Description |
-|---------|-----------|--------------|-------------|
-| Attribute Property Parsing | 774.4 ms | 56.02 MB | Parsing singleton attributes and properties |
-| Generic Singleton Generation | 751.2 ms | 55.33 MB | Generating code for generic singletons |
-| Factory Method Generation | 790.4 ms | 55.30 MB | Generating factory method implementations |
-
-### Performance Characteristics
-
-- **Lock-Free**: Fastest runtime performance across most scenarios (300-459 μs)
-- **Low Memory Overhead**: Efficient memory usage (87-149 KB for typical scenarios)
-- **Fast Code Generation**: Sub-second generation times for most features
-- **Scalable**: Performance remains consistent across different complexity levels
-- **Generic-Optimized**: Specialized handling for generic singleton classes
-
-### Memory Efficiency
-- Simple singletons: ~87 KB allocated
-- Complex singletons: ~95 KB allocated  
-- Generic singletons: ~99 KB allocated
-- Multiple singletons: ~127 KB allocated
-- High-concurrency scenarios: ~639 KB allocated
 
 ## Requirements
 
-- .NET Standard 2.0 or higher
-- C# 8.0 or higher (for source generators)
-- Partial class declaration
+- **Partial class**: Your class must be declared as `partial`
+- **Private constructor**: Required to prevent external instantiation
+- **.NET Framework 4.0+**: Compatible with legacy applications
 
-## Generated Code Example
+## Common Patterns
 
-For a basic singleton, the generator creates:
+### Configuration Management
 ```csharp
-// <auto-generated />
-#nullable enable
-using System;
-using System.Threading;
-
-namespace Demo.Singleton.ConsoleApp;
-
-partial class ConfigurationManager
+[Singleton(Strategy = SingletonStrategy.Lazy)]
+public partial class AppConfig
 {
-    private static volatile ConfigurationManager? _instance;
-    private static int _isInitialized = 0;
+    private readonly ConcurrentDictionary<string, string> _settings = new();
+    private AppConfig() { LoadFromFile(); }
+}
+```
 
-    public static ConfigurationManager Instance
-    {
-        get
-        {
-            if (_instance != null) return _instance; // Fast path
-            return GetOrCreateInstance();
-        }
-    }
+### Resource Pooling
+```csharp
+[Singleton(Strategy = SingletonStrategy.LockFree)]
+public partial class ObjectPool<T>
+{
+    private readonly ConcurrentQueue<T> _objects = new();
+    private ObjectPool() { PrePopulatePool(); }
+}
+```
 
-    private static ConfigurationManager GetOrCreateInstance()
-    {
-        if (Interlocked.CompareExchange(ref _isInitialized, 1, 0) == 0)
-        {
-            // We won the race - create the instance
-            var newInstance = CreateSingletonInstance();
-            Interlocked.Exchange(ref _instance, newInstance); // Atomic assignment with memory barrier
-        }
-        else
-        {
-            // Another thread is creating the instance - spin wait
-            SpinWait.SpinUntil(() => _instance != null);
-        }
-        return _instance!;
-    }
+### Metrics Collection
+```csharp
+[Singleton(Strategy = SingletonStrategy.LockFree)]
+public partial class PerformanceCounters
+{
+    private readonly ConcurrentDictionary<string, long> _counters = new();
+    private PerformanceCounters() { }
+}
+```
 
-    private static ConfigurationManager CreateSingletonInstance()
+## Warnings and Diagnostics
+
+The generator provides helpful warnings:
+
+| Warning | Meaning | Solution |
+|---------|---------|----------|
+| **Non-thread-safe field** | Using `Dictionary`, `List`, etc. | Use `ConcurrentDictionary`, `ConcurrentBag`, etc. |
+| **Public constructor** | Constructor is publicly accessible | Make constructor private |
+| **Class not partial** | Cannot generate singleton implementation | Add `partial` keyword |
+
+## Performance Comparison
+
+| Strategy | Initialization | Access Speed | Memory | Use Case |
+|----------|---------------|--------------|---------|----------|
+| **Lazy** | Lazy | Good | Low | General purpose |
+| **Eager** | Immediate | Fastest | Higher | Critical systems |
+| **LockFree** | Lazy | Fastest | Low | High-frequency access |
+| **DoubleCheckedLocking** | Lazy | Good | Low | Balanced performance |
+
+## Best Practices
+
+### ✅ Do
+- Use `ConcurrentDictionary` instead of `Dictionary`
+- Use `ConcurrentBag` instead of `List`
+- Make constructors private
+- Use `Initialize()` method for setup logic
+- Choose appropriate strategy for your use case
+
+### ❌ Don't
+- Use non-thread-safe collections as instance fields
+- Make constructors public
+- Forget the `partial` keyword
+- Use singletons for everything (only when truly needed)
+
+## Migration from Manual Singletons
+
+**Before** (error-prone):
+```csharp
+public class MyService
+{
+    private static MyService _instance;
+    private static readonly object _lock = new object();
+    
+    public static MyService Instance 
     {
-        var instance = new ConfigurationManager();
-        instance.Initialize();
-        return instance;
+        get 
+        {
+            if (_instance == null)
+            {
+                lock (_lock)
+                {
+                    if (_instance == null)
+                        _instance = new MyService();
+                }
+            }
+            return _instance;
+        }
     }
 }
 ```
-## Best Practices
 
-1. **Choose the Right Strategy**:
-   - Use `LockFree` for most scenarios
-   - Use `Eager` when fastest access is critical
-   - Use `DoubleCheckedLocking` for generic singletons
-   - Use `Lazy` for simple, low-contention scenarios
-
-2. **Initialization**:
-   - Implement an `Initialize()` method for setup logic
-   - Keep initialization lightweight for better performance
-   - Use factory methods for complex initialization
-
-3. **Thread Safety**:
-   - All generated code is thread-safe by default
-   - Your instance methods should also be thread-safe
-   - Use concurrent collections when needed
-
-4. **Generic Constraints**:
-   - Apply appropriate type constraints
-   - Consider the impact on compilation time
+**After** (generated, correct):
+```csharp
+[Singleton]
+public partial class MyService
+{
+    private MyService() { }
+    // All singleton logic generated automatically
+}
+```
 
 ## Troubleshooting
 
-- Ensure your class is declared as `partial`
-- The `[Singleton]` attribute must be applied to the class
-- For factory methods, ensure the method is `static` and parameterless
-- Generic singletons require explicit type parameters when accessing
+**Issue**: "Class must be partial"
+**Solution**: Add `partial` keyword to your class declaration
 
-## License
+**Issue**: "Public constructor warning"  
+**Solution**: Make your constructor private
 
-Apache License 2.0
+**Issue**: "Non-thread-safe collection warning"
+**Solution**: Replace with thread-safe alternatives:
+- `Dictionary` → `ConcurrentDictionary`
+- `List` → `ConcurrentBag` or `ConcurrentQueue`
+- `HashSet` → `ConcurrentDictionary<T, byte>`
+
+---
+
+*This generator helps create reliable singleton implementations for legacy .NET Framework applications where dependency injection is not available.*

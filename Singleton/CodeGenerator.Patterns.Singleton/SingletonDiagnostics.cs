@@ -65,12 +65,44 @@ public static class SingletonDiagnostics
         category: "Singleton",
         defaultSeverity: DiagnosticSeverity.Info,
         isEnabledByDefault: true);
+    
+    public static readonly DiagnosticDescriptor NonThreadSafeField = new(
+        id: "SIN007",
+        title: "Non-thread-safe field in singleton class",
+        messageFormat: "Field '{0}' of type '{1}' in singleton class '{2}' is not thread-safe. Consider using thread-safe alternatives like ConcurrentDictionary, ConcurrentBag, etc.",
+        category: "Singleton",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
 
+    public static readonly DiagnosticDescriptor NonThreadSafeProperty = new(
+        id: "SIN008",
+        title: "Non-thread-safe property in singleton class",
+        messageFormat: "Property '{0}' of type '{1}' in singleton class '{2}' is not thread-safe. Consider using thread-safe alternatives or proper synchronization",
+        category: "Singleton",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor NonThreadSafeMethodAccess = new(
+        id: "SIN009",
+        title: "Method accesses non-thread-safe members",
+        messageFormat: "Method '{0}' in singleton class '{1}' accesses non-thread-safe member '{2}'. Consider adding proper synchronization or using thread-safe collections",
+        category: "Singleton",
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true);
+    
+    public static readonly DiagnosticDescriptor PublicConstructorWarning = new(
+        id: "SIN010",
+        title: "Singleton class should not have public constructor",
+        messageFormat: "Singleton class '{0}' has a public constructor. Consider making constructors private or protected to prevent external instantiation",
+        category: "Singleton",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true);
+    
     public static readonly DiagnosticDescriptor CodeGenerationError = new(
         id: "SIN999",
         title: "Code generation error",
-		messageFormat: "Failed to generate singleton for class '{0}': {1}",
-		category: "Singleton",
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true);
+        messageFormat: "Failed to generate singleton for class '{0}': {1}",
+        category: "Singleton",
+        defaultSeverity: DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
 }

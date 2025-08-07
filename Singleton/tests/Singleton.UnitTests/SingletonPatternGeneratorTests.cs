@@ -43,6 +43,7 @@ namespace TestNamespace
     [Singleton]
     partial class TestSingleton
     {
+        private TestSingleton() { }
     }
 }";
 
@@ -71,6 +72,7 @@ namespace TestNamespace
     [Singleton]
     class NonPartialClass
     {
+        private NonPartialClass() { }
     }
 }";
 
@@ -79,6 +81,28 @@ namespace TestNamespace
 
         Assert.Contains(generatorResult.Diagnostics,
             d => d.Id == "SIN001" && d.Severity == DiagnosticSeverity.Error);
+    }
+
+    [Fact]
+    public void ReportsWarningForPublicConstructor()
+    {
+        var source = @"
+using CodeGenerator.Patterns.Singleton;
+
+namespace TestNamespace
+{
+    [Singleton]
+    partial class PublicConstructorSingleton
+    {
+        public PublicConstructorSingleton() { }
+    }
+}";
+
+        var result = RunGenerator(source);
+        var generatorResult = result.Results[0];
+
+        Assert.Contains(generatorResult.Diagnostics,
+            d => d.Id == "SIN010" && d.Severity == DiagnosticSeverity.Warning);
     }
 
     [Fact]
@@ -92,6 +116,7 @@ namespace TestNamespace
     [Singleton(Strategy = SingletonStrategy.Eager)]
     partial class EagerSingleton
     {
+        private EagerSingleton() { }
     }
 }";
 
@@ -115,6 +140,7 @@ namespace TestNamespace
     [Singleton(Strategy = SingletonStrategy.LockFree)]
     partial class LockFreeSingleton
     {
+        private LockFreeSingleton() { }
     }
 }";
 
@@ -138,6 +164,7 @@ namespace TestNamespace
     [Singleton(Strategy = SingletonStrategy.DoubleCheckedLocking)]
     partial class DoubleCheckedSingleton
     {
+        private DoubleCheckedSingleton() { }
     }
 }";
 
@@ -148,6 +175,7 @@ namespace TestNamespace
 
         Assert.Contains("private static readonly object _lock", singletonSource);
         Assert.Contains("lock (_lock)", singletonSource);
+        Assert.Contains("private static volatile DoubleCheckedSingleton?", singletonSource);
     }
 
     [Fact]
@@ -161,6 +189,7 @@ namespace TestNamespace
     [Singleton(Strategy = SingletonStrategy.Lazy)]
     partial class LazySingleton
     {
+        private LazySingleton() { }
     }
 }";
 
@@ -184,6 +213,7 @@ namespace TestNamespace
     [Singleton]
     partial class GenericSingleton<T> where T : class
     {
+        private GenericSingleton() { }
     }
 }";
 
@@ -208,6 +238,7 @@ namespace TestNamespace
     [Singleton]
     partial class SingletonWithInit
     {
+        private SingletonWithInit() { }
         public void Initialize() { }
     }
 }";
@@ -221,39 +252,19 @@ namespace TestNamespace
     }
 
     [Fact]
-    public void GeneratesSingletonWithFactoryMethod()
+    public void ReportsWarningForNonThreadSafeField()
     {
         var source = @"
+using System.Collections.Generic;
 using CodeGenerator.Patterns.Singleton;
 
 namespace TestNamespace
 {
-    [Singleton(UseFactory = true, FactoryMethodName = ""Create"")]
-    partial class SingletonWithFactory
+    [Singleton]
+    partial class SingletonWithNonThreadSafeField
     {
-        public static SingletonWithFactory Create() => new SingletonWithFactory();
-    }
-}";
-
-        var result = RunGenerator(source);
-        var singletonSource = result.Results[0].GeneratedSources
-            .First(s => s.HintName == "SingletonWithFactory.Singleton.g.cs")
-            .SourceText.ToString();
-
-        Assert.Contains("var instance = Create()", singletonSource);
-    }
-
-    [Fact]
-    public void ReportsErrorForMissingFactoryMethod()
-    {
-        var source = @"
-using CodeGenerator.Patterns.Singleton;
-
-namespace TestNamespace
-{
-    [Singleton(UseFactory = true, FactoryMethodName = ""MissingMethod"")]
-    partial class SingletonMissingFactory
-    {
+        private SingletonWithNonThreadSafeField() { }
+        private Dictionary<string, int> _data = new Dictionary<string, int>();
     }
 }";
 
@@ -261,78 +272,7 @@ namespace TestNamespace
         var generatorResult = result.Results[0];
 
         Assert.Contains(generatorResult.Diagnostics,
-            d => d.Id == "SIN002" && d.Severity == DiagnosticSeverity.Error);
-    }
-
-    [Fact]
-    public void ReportsErrorForInvalidFactoryMethodSignature()
-    {
-        var source = @"
-using CodeGenerator.Patterns.Singleton;
-
-namespace TestNamespace
-{
-    [Singleton(UseFactory = true, FactoryMethodName = ""BadFactory"")]
-    partial class SingletonBadFactory
-    {
-        public SingletonBadFactory BadFactory() => new SingletonBadFactory(); // Not static
-    }
-}";
-
-        var result = RunGenerator(source);
-        var generatorResult = result.Results[0];
-
-        Assert.Contains(generatorResult.Diagnostics,
-            d => d.Id == "SIN003" && d.Severity == DiagnosticSeverity.Error);
-    }
-
-    [Fact]
-    public void GeneratesDIExtensionsWhenRequested()
-    {
-        var source = @"
-using CodeGenerator.Patterns.Singleton;
-
-namespace TestNamespace
-{
-    [Singleton(RegisterInDI = true)]
-    partial class DIRegisteredSingleton
-    {
-    }
-}";
-
-        var result = RunGenerator(source);
-        var generatorResult = result.Results[0];
-
-        Assert.Contains(generatorResult.GeneratedSources,
-            s => s.HintName == "DIRegisteredSingleton.DI.g.cs");
-
-        var diSource = generatorResult.GeneratedSources
-            .First(s => s.HintName == "DIRegisteredSingleton.DI.g.cs")
-            .SourceText.ToString();
-
-        Assert.Contains("AddDIRegisteredSingletonSingleton", diSource);
-        Assert.Contains("services.AddSingleton", diSource);
-    }
-
-    [Fact]
-    public void ReportsWarningForConflictingConfiguration()
-    {
-        var source = @"
-using CodeGenerator.Patterns.Singleton;
-
-namespace TestNamespace
-{
-    [Singleton(Strategy = SingletonStrategy.Eager, LazyInitialization = true)]
-    partial class ConflictingSingleton
-    {
-    }
-}";
-
-        var result = RunGenerator(source);
-        var generatorResult = result.Results[0];
-
-        Assert.Contains(generatorResult.Diagnostics,
-            d => d.Id == "SIN005" && d.Severity == DiagnosticSeverity.Warning);
+            d => d.Id == "SIN007" && d.Severity == DiagnosticSeverity.Warning);
     }
 
     [Fact]
@@ -346,11 +286,13 @@ namespace TestNamespace
     [Singleton]
     partial class FirstSingleton
     {
+        private FirstSingleton() { }
     }
 
     [Singleton(Strategy = SingletonStrategy.Eager)]
     partial class SecondSingleton
     {
+        private SecondSingleton() { }
     }
 }";
 
@@ -380,5 +322,27 @@ namespace TestNamespace
         // Should only have the attribute source
         Assert.Single(generatorResult.GeneratedSources);
         Assert.Equal("SingletonAttribute.g.cs", generatorResult.GeneratedSources[0].HintName);
+    }
+
+    [Fact]
+    public void ReportsGenericConstraintWarning()
+    {
+        var source = @"
+using CodeGenerator.Patterns.Singleton;
+
+namespace TestNamespace
+{
+    [Singleton(Strategy = SingletonStrategy.LockFree)]
+    partial class GenericSingletonWithStruct<T> where T : struct
+    {
+        private GenericSingletonWithStruct() { }
+    }
+}";
+
+        var result = RunGenerator(source);
+        var generatorResult = result.Results[0];
+
+        Assert.Contains(generatorResult.Diagnostics,
+            d => d.Id == "SIN006" && d.Severity == DiagnosticSeverity.Info);
     }
 }

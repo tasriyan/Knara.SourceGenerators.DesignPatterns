@@ -3,12 +3,15 @@ using CodeGenerator.Patterns.Singleton;
 
 namespace Singleton.UnitTests.UseCases;
 
-// DEPENDENCY-INJECTED SINGLETON - Works with DI containers
-[Singleton(Strategy = SingletonStrategy.LockFree, RegisterInDI = true)]
+[Singleton(Strategy = SingletonStrategy.LockFree)]
 public partial class CacheManager
 {
     private readonly ConcurrentDictionary<string, (object Value, DateTime Expiry)> _cache = new();
 
+    private CacheManager()
+    {
+    }
+    
     private void Initialize()
     {
         // Start background cleanup task
@@ -56,7 +59,7 @@ public partial class CacheManager
     }
 }
 
-//CONVERTED TO SINGLETON
+//GENERATED CONVERSION TO SINGLETON
 partial class CacheManager
 {
     private static volatile CacheManager? _instance;
@@ -94,3 +97,4 @@ partial class CacheManager
         return instance;
     }
 }
+

@@ -4,11 +4,15 @@ using CodeGenerator.Patterns.Singleton;
 namespace Demo.Singleton.ConsoleApp;
 
 // HIGH-PERFORMANCE SINGLETON - Lock-free access for read-heavy scenarios
-[Singleton(Strategy = SingletonStrategy.LockFree, LazyInitialization = true)]
+[Singleton(Strategy = SingletonStrategy.LockFree)]
 public partial class MetricsCollector
 {
     private readonly ConcurrentDictionary<string, long> _counters = new();
     private readonly ConcurrentDictionary<string, double> _gauges = new();
+    
+    private MetricsCollector()
+    {
+    }
 
     private void Initialize()
     {

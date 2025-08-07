@@ -13,14 +13,21 @@ public static class SingletonUsageDemo
         Console.WriteLine("==================================");
 
         // 1. Basic singleton usage - lazy initialization
-        Console.WriteLine("\n1. Basic Singleton:");
+        Console.WriteLine("\n[1]. Lazy Singleton:");
+        ConfigurationManager.LogMessage("Lazy singleton (ConfigurationManager) is not initialized yet.");
         var config1 = ConfigurationManager.Instance;
         var config2 = ConfigurationManager.Instance;
         Console.WriteLine($"Same instance: {ReferenceEquals(config1, config2)}");
         Console.WriteLine($"Environment: {config1.GetSetting("Environment")}");
+        
+        // 2. Eager singleton - already initialized
+        Console.WriteLine("\n[2]. Eager Singleton:");
+        Logger.LogMessage("Eager singleton (Logger) is already initialized at startup.");
+        var logger = Logger.Instance; // Already initialized at startup
+        logger.Log("Application started");
 
-        // 2. High-performance metrics collection
-        Console.WriteLine("\n2. High-Performance Metrics:");
+        // 3. Lock-free singleton for high performance
+        Console.WriteLine("\n[3]. Lock-Free Singleton:");
         var metrics = MetricsCollector.Instance;
         
         // Simulate concurrent metric updates
@@ -32,48 +39,26 @@ public static class SingletonUsageDemo
         
         await Task.WhenAll(tasks);
         Console.WriteLine($"Total requests: {metrics.GetCounter("requests")}");
-
-        // 3. Eager singleton - already initialized
-        Console.WriteLine("\n3. Eager Singleton:");
-        var logger = Logger.Instance; // Already initialized at startup
-        logger.Log("Application started");
-
-        // 4. Cache manager with expiry
-        Console.WriteLine("\n4. Cache Manager:");
-        var cache = CacheManager.Instance;
-        cache.Set("user:123", new { Name = "John", Age = 30 }, TimeSpan.FromSeconds(10));
-        var cachedUser = cache.Get<object>("user:123");
-        Console.WriteLine($"Cached user: {cachedUser}");
-
-        // 5. Generic singleton
-        Console.WriteLine("\n5. Generic Repository:");
-        var userRepo = Repository<User>.Instance;
-        var productRepo = Repository<Product>.Instance;
         
-        userRepo.Add(new User { Name = "Alice" });
-        productRepo.Add(new Product { Name = "Widget" });
+        // 4. Generic singleton
+        Console.WriteLine("\n[4]. Generic Repository:");
+        var userRepo = Repository<UserEntity>.Instance;
+        var productRepo = Repository<OrderEntity>.Instance;
+        
+        userRepo.Add(new UserEntity { Name = "Alice" });
+        productRepo.Add(new OrderEntity { OrderDate = DateTime.Now });
         
         Console.WriteLine($"User repo items: {userRepo.GetAll().Count}");
         Console.WriteLine($"Product repo items: {productRepo.GetAll().Count}");
         Console.WriteLine($"Different instances: {!ReferenceEquals(userRepo, productRepo)}");
-
-        // 6. Factory-based singleton
-        Console.WriteLine("\n6. Factory-Based Singleton:");
-        var dbPool = DbConnectionPool.Instance;
-        var connection = dbPool.GetConnection();
+        
+        // 5. Double-checking with lock singleton
+        Console.WriteLine("\n[5]. Double-Checking with Lock Singleton:");
+        var dbPool1 = DbConnectionPool.Instance;
+        var dbPool2 = DbConnectionPool.Instance;
+        Console.WriteLine($"Same instance: {ReferenceEquals(dbPool1, dbPool2)}");
+        var connection = dbPool1.GetConnection();
         Console.WriteLine($"Got connection: {connection != null}");
-        dbPool.ReturnConnection(connection);
-    }
-    
-    private class User
-    {
-        public string Name { get; set; } = "";
-        public int Age { get; set; }
-    }
-
-    private class Product
-    {
-        public string Name { get; set; } = "";
-        public decimal Price { get; set; }
+        dbPool1.ReturnConnection(connection);
     }
 }

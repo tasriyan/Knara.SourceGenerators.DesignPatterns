@@ -5,47 +5,39 @@ using CodeGenerator.Patterns.Singleton;
 
 namespace Singleton.UnitTests.UseCases;
 
-// FACTORY-BASED SINGLETON - For complex initialization scenarios
-[Singleton(Strategy = SingletonStrategy.LockFree, UseFactory = true)]
+[Singleton(Strategy = SingletonStrategy.DoubleCheckedLocking)]
 public partial class DbConnectionPool
 {
     private readonly string _connectionString;
     private readonly ConcurrentQueue<IDbConnection> _availableConnections;
     private readonly int _maxPoolSize;
 
-    // Factory method for complex initialization
-    public static DbConnectionPool CreateInstance()
+    private DbConnectionPool()
     {
-        var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
-                               ?? "Server=localhost;Database=MyApp;";
-        var maxPoolSize = int.Parse(Environment.GetEnvironmentVariable("POOL_SIZE") ?? "10");
-        
-        return new DbConnectionPool(connectionString, maxPoolSize);
-    }
-
-    private DbConnectionPool(string connectionString, int maxPoolSize)
-    {
-        _connectionString = connectionString;
-        _maxPoolSize = maxPoolSize;
+        _connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING") 
+                            ?? "Server=localhost;Database=MyApp;";
+        _maxPoolSize = int.Parse(Environment.GetEnvironmentVariable("POOL_SIZE") ?? "10");
         _availableConnections = new ConcurrentQueue<IDbConnection>();
         
         // Pre-populate the pool
-        for (int i = 0; i < maxPoolSize; i++)
+        for (int i = 0; i < _maxPoolSize; i++)
         {
             _availableConnections.Enqueue(CreateConnection());
         }
         
-        Console.WriteLine($"DatabaseConnectionPool initialized with {maxPoolSize} connections");
+        Console.WriteLine($"DatabaseConnectionPool initialized with {_maxPoolSize} connections");
     }
 
     public IDbConnection GetConnection()
     {
         if (_availableConnections.TryDequeue(out var connection))
         {
+            Console.WriteLine($"Retrieved connection: {connection != null}");
             return connection;
         }
         
         // Pool exhausted, create new connection
+        Console.WriteLine("Connection pool exhausted, creating new connection");
         return CreateConnection();
     }
 
@@ -54,10 +46,12 @@ public partial class DbConnectionPool
         if (_availableConnections.Count < _maxPoolSize)
         {
             _availableConnections.Enqueue(connection);
+            Console.WriteLine($"Returning connection: {connection != null}");
         }
         else
         {
             connection.Dispose();
+            Console.WriteLine("Connection pool is full, disposing connection");
         }
     }
 
@@ -68,40 +62,33 @@ public partial class DbConnectionPool
     }
 }
 
-//CONVERTED TO SINGLETON
+// GENERATED CONVERSION TO SINGLETON
 partial class DbConnectionPool
 {
     private static volatile DbConnectionPool? _instance;
-    private static int _isInitialized = 0;
+    private static readonly object _lock = new object();
 
     public static DbConnectionPool Instance
     {
         get
         {
-            if (_instance != null) return _instance; // Fast path
-            return GetOrCreateInstance();
+            if (_instance == null)
+            {
+                lock (_lock)
+                {
+                    if (_instance == null)
+                    {
+                        _instance = CreateSingletonInstance();
+                    }
+                }
+            }
+            return _instance;
         }
-    }
-
-    private static DbConnectionPool GetOrCreateInstance()
-    {
-        if (Interlocked.CompareExchange(ref _isInitialized, 1, 0) == 0)
-        {
-            // We won the race - create the instance
-            var newInstance = CreateSingletonInstance();
-            Interlocked.Exchange(ref _instance, newInstance); // Atomic assignment with memory barrier
-        }
-        else
-        {
-            // Another thread is creating the instance - spin wait
-            SpinWait.SpinUntil(() => _instance != null);
-        }
-        return _instance!;
     }
 
     private static DbConnectionPool CreateSingletonInstance()
     {
-        var instance = CreateInstance();
+        var instance = new DbConnectionPool();
         return instance;
     }
 }
