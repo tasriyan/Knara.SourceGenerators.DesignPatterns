@@ -1,6 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using Demo.Decorator.ConsoleApp;
+using Demo.Decorator.DotNetCore;
 using Microsoft.Extensions.Logging;
 
 var loggerFactory = LoggerFactory.Create(builder =>
@@ -19,6 +19,7 @@ var loggerFactory = LoggerFactory.Create(builder =>
 });
 
  try {
+     Console.WriteLine("=== Decorator Pattern Generator Demo For .NET Core ===\n");
     // Example 1: User Service with a bunch of decorators and fluid API usage
     await UserServiceDemo.FluidApiUsageDemo(loggerFactory);
 

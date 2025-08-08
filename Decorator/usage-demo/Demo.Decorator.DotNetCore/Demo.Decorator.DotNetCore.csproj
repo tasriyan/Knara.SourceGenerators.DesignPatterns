@@ -8,6 +8,7 @@
     <Nullable>enable</Nullable>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>Generated\$(TargetFramework)</CompilerGeneratedFilesOutputPath>
+    <RootNamespace>Demo.Decorator.DotNetCore</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
