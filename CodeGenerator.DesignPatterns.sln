@@ -23,7 +23,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Decorator", "Decorator", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeGenerator.Patterns.Decorator", "Decorator\CodeGenerator.Patterns.Decorator\CodeGenerator.Patterns.Decorator.csproj", "{A8063A82-DAC9-F17B-DB63-1B04D5274DF8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Decorator.ConsoleApp", "Decorator\usage-demo\Demo.Decorator.ConsoleApp\Demo.Decorator.ConsoleApp.csproj", "{AB020ECE-ED13-6EB9-BB94-08F3D5D1C237}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Decorator.DotNetCore", "Decorator\usage-demo\Demo.Decorator.DotNetCore\Demo.Decorator.DotNetCore.csproj", "{AB020ECE-ED13-6EB9-BB94-08F3D5D1C237}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Singleton", "Singleton", "{54C4B6B8-4E45-4CBF-B858-6C6A0505B463}"
 	ProjectSection(SolutionItems) = preProject
@@ -56,6 +56,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{99DE8CB4-3D45-4754-B7BD-F7F86308E31D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Builder.DotNet4", "Builder\usage-demo\Demo.Builder.DotNet4\Demo.Builder.DotNet4.csproj", "{D705A65F-3DE5-4CFD-B75D-999F09EAF16B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Decorator.DotNet4", "Decorator\usage-demo\Demo.Decorator.DotNet4\Demo.Decorator.DotNet4.csproj", "{3D22EF57-510E-442F-B074-714E7A57232B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -119,6 +121,10 @@ Global
 		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D22EF57-510E-442F-B074-714E7A57232B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D22EF57-510E-442F-B074-714E7A57232B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D22EF57-510E-442F-B074-714E7A57232B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D22EF57-510E-442F-B074-714E7A57232B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -141,6 +147,7 @@ Global
 		{99DE8CB4-3D45-4754-B7BD-F7F86308E31D} = {44011200-7E39-4887-A9C8-54A12E8A190E}
 		{4AEEB371-42DC-46F8-AAD2-7A96CA830641} = {99DE8CB4-3D45-4754-B7BD-F7F86308E31D}
 		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B} = {F1ACED7F-7D8E-442C-AAC9-068A64407E78}
+		{3D22EF57-510E-442F-B074-714E7A57232B} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0883C14D-DAD2-471B-AABE-081FEEC8DDD3}
