@@ -8,7 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Builder", "Builder", "{F1AC
 		Builder\README.md = Builder\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Builder.ConsoleApp", "Builder\usage-demo\Demo.Builder.ConsoleApp\Demo.Builder.ConsoleApp.csproj", "{9DF5C120-CCEB-455C-9C0A-24090B8CC2FD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Builder.DotNetCore", "Builder\usage-demo\Demo.Builder.DotNetCore\Demo.Builder.DotNetCore.csproj", "{9DF5C120-CCEB-455C-9C0A-24090B8CC2FD}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{2593BDD6-253A-4A80-A45A-739EBE088694}"
 EndProject
@@ -54,6 +54,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediator.UnitTests", "Mediator\tests\Mediator.UnitTests\Mediator.UnitTests.csproj", "{4AEEB371-42DC-46F8-AAD2-7A96CA830641}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{99DE8CB4-3D45-4754-B7BD-F7F86308E31D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Builder.DotNet4", "Builder\usage-demo\Demo.Builder.DotNet4\Demo.Builder.DotNet4.csproj", "{D705A65F-3DE5-4CFD-B75D-999F09EAF16B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -113,6 +115,10 @@ Global
 		{4AEEB371-42DC-46F8-AAD2-7A96CA830641}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4AEEB371-42DC-46F8-AAD2-7A96CA830641}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4AEEB371-42DC-46F8-AAD2-7A96CA830641}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -134,6 +140,7 @@ Global
 		{A75F6A14-A70E-43CD-A996-C69D2184E997} = {A00C449A-11EB-40F2-9648-5996A2AEE032}
 		{99DE8CB4-3D45-4754-B7BD-F7F86308E31D} = {44011200-7E39-4887-A9C8-54A12E8A190E}
 		{4AEEB371-42DC-46F8-AAD2-7A96CA830641} = {99DE8CB4-3D45-4754-B7BD-F7F86308E31D}
+		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B} = {F1ACED7F-7D8E-442C-AAC9-068A64407E78}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0883C14D-DAD2-471B-AABE-081FEEC8DDD3}

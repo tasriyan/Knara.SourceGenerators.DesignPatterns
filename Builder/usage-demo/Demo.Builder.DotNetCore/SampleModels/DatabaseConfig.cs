@@ -1,6 +1,6 @@
 ﻿using CodeGenerator.Patterns.Builder;
 
-namespace Demo.Builder.ConsoleApp.SampleModels;
+namespace Demo.Builder.DotNetCore.SampleModels;
 
 [GenerateBuilder(ValidateOnBuild = true, GenerateFromMethod = true)]
 public class DatabaseConfig

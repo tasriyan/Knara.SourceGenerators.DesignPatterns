@@ -1,13 +1,13 @@
 using System.Text.Json;
-using Demo.Builder.ConsoleApp.SampleModels;
+using Demo.Builder.DotNetCore.SampleModels;
 
-namespace Demo.Builder.ConsoleApp;
+namespace Demo.Builder.DotNetCore;
 
 internal static class BuilderDemo
 {
     public static void RunDemo()
     {
-        Console.WriteLine("=== Builder Pattern Generator BuilderGenerator.Demo ===\n");
+        Console.WriteLine("=== Builder Pattern Generator Demo For .NET Core ===\n");
 
         // BuilderGenerator.Demo 1: User Builder
         DemoUserBuilder();

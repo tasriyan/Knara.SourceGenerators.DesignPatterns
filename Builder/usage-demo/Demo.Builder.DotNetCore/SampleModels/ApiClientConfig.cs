@@ -1,6 +1,6 @@
 ﻿using CodeGenerator.Patterns.Builder;
 
-namespace Demo.Builder.ConsoleApp.SampleModels;
+namespace Demo.Builder.DotNetCore.SampleModels;
 
 [GenerateBuilder(BuilderName = "ApiConfigBuilder")]
 public class ApiClientConfig
