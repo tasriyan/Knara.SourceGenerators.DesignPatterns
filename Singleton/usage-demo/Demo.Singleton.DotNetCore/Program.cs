@@ -2,6 +2,8 @@
 
 using Demo.Singleton.DotNetCore;
 
+Console.WriteLine("=== Singleton Pattern Generator Demo For .NET Core ===");
+Console.WriteLine("==================================");
 await SingletonUsageDemo.DemonstrateUsage();
 
 // USAGE EXAMPLES
@@ -9,9 +11,6 @@ public static class SingletonUsageDemo
 {
     public static async Task DemonstrateUsage()
     {
-        Console.WriteLine("High-Performance Singleton Demo");
-        Console.WriteLine("==================================");
-
         // 1. Basic singleton usage - lazy initialization
         Console.WriteLine("\n[1]. Lazy Singleton:");
         ConfigurationManager.LogMessage("Lazy singleton (ConfigurationManager) is not initialized yet.");

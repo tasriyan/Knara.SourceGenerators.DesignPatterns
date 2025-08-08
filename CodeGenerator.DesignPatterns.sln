@@ -32,7 +32,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Singleton", "Singleton", "{
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeGenerator.Patterns.Singleton", "Singleton\CodeGenerator.Patterns.Singleton\CodeGenerator.Patterns.Singleton.csproj", "{9A69C47D-4D65-40B4-BF0E-2CAB7EB50E51}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Singleton.ConsoleApp", "Singleton\usage-demo\Demo.Singleton.ConsoleApp\Demo.Singleton.ConsoleApp.csproj", "{F0F1873A-3ED4-49B6-9F81-5E0663C7DB9D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Singleton.DotNetCore", "Singleton\usage-demo\Demo.Singleton.DotNetCore\Demo.Singleton.DotNetCore.csproj", "{F0F1873A-3ED4-49B6-9F81-5E0663C7DB9D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A00C449A-11EB-40F2-9648-5996A2AEE032}"
 EndProject
@@ -60,6 +60,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Decorator.DotNet4", "Decorator\usage-demo\Demo.Decorator.DotNet4\Demo.Decorator.DotNet4.csproj", "{3D22EF57-510E-442F-B074-714E7A57232B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Mediator.DotNet4", "Mediator\usage-demo\Demo.Mediator.DotNet4\Demo.Mediator.DotNet4.csproj", "{9DEF796C-837D-4D73-B61C-6FEC7A9E9CAB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Singleton.DotNet4", "Singleton\usage-demo\Demo.Singleton.DotNet4\Demo.Singleton.DotNet4.csproj", "{393CA88A-25D7-42F2-9743-5AFA6E92AF79}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -131,6 +133,10 @@ Global
 		{9DEF796C-837D-4D73-B61C-6FEC7A9E9CAB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9DEF796C-837D-4D73-B61C-6FEC7A9E9CAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9DEF796C-837D-4D73-B61C-6FEC7A9E9CAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{393CA88A-25D7-42F2-9743-5AFA6E92AF79}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{393CA88A-25D7-42F2-9743-5AFA6E92AF79}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{393CA88A-25D7-42F2-9743-5AFA6E92AF79}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{393CA88A-25D7-42F2-9743-5AFA6E92AF79}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -155,6 +161,7 @@ Global
 		{D705A65F-3DE5-4CFD-B75D-999F09EAF16B} = {F1ACED7F-7D8E-442C-AAC9-068A64407E78}
 		{3D22EF57-510E-442F-B074-714E7A57232B} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{9DEF796C-837D-4D73-B61C-6FEC7A9E9CAB} = {44011200-7E39-4887-A9C8-54A12E8A190E}
+		{393CA88A-25D7-42F2-9743-5AFA6E92AF79} = {54C4B6B8-4E45-4CBF-B858-6C6A0505B463}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0883C14D-DAD2-471B-AABE-081FEEC8DDD3}
