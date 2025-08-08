@@ -92,18 +92,6 @@ namespace Demo.Mediator.DotNet4
 			return 50; 
 		}
 	}
-
-	[StreamQuery(Name = "UsersStreamQuery", ResponseType = typeof(User))]
-	public class BulkUsersRequestWithBuffer
-	{
-		public string? EmailFilter { get; set; }
-		public int? BufferSize { get; set; }
-		BulkUsersRequestWithBuffer(string? emailFilter, int? bufferSize = null)
-		{
-			EmailFilter = emailFilter;
-			BufferSize = bufferSize;
-		}
-	}
 	
 	public class NewUserModel
 	{
