@@ -31,7 +31,7 @@ public static class MediatorDiagnostics
     public static readonly DiagnosticDescriptor HandlerNotFound = new(
         id: "MED004",
         title: "Request has no corresponding handler",
-        messageFormat: "Request '{0}' has no corresponding handler. Add a [{1}Handler] class to process this request",
+        messageFormat: "Request '{0}' has no corresponding handler. Add a [{1}Handler] class to process this request.",
         category: "Mediator",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true);
@@ -47,7 +47,7 @@ public static class MediatorDiagnostics
     public static readonly DiagnosticDescriptor ConflictingRequestAttributes = new(
         id: "MED006",
         title: "Multiple request attributes on same class",
-        messageFormat: "Class '{0}' has multiple request attributes [{1}]. Only one request attribute per class is allowed",
+        messageFormat: "Class '{0}' has multiple request attributes [{1}]. Only one request attribute per class is allowed.",
         category: "Mediator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -55,7 +55,7 @@ public static class MediatorDiagnostics
     public static readonly DiagnosticDescriptor ConflictingHandlerAttributes = new(
         id: "MED007",
         title: "Multiple handler attributes on same class",
-        messageFormat: "Class '{0}' has multiple handler attributes [{1}]. Only one handler attribute per class is allowed",
+        messageFormat: "Class '{0}' has multiple handler attributes [{1}]. Only one handler attribute per class is allowed.",
         category: "Mediator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -63,7 +63,7 @@ public static class MediatorDiagnostics
     public static readonly DiagnosticDescriptor TypeSymbolNotResolved = new(
         id: "MED008",
         title: "Type symbol could not be resolved",
-        messageFormat: "Unable to resolve type symbol for '{0}'. Mediator generation skipped",
+        messageFormat: "Unable to resolve type symbol for '{0}'. Mediator generation skipped.",
         category: "Mediator",
         defaultSeverity: DiagnosticSeverity.Error,
         isEnabledByDefault: true);
