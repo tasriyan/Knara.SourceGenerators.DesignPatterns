@@ -3,7 +3,7 @@ using System.Data;
 using System.Data.SqlClient;
 using CodeGenerator.Patterns.Singleton;
 
-namespace Demo.Singleton.ConsoleApp;
+namespace Demo.Singleton.DotNetCore;
 
 [Singleton(Strategy = SingletonStrategy.DoubleCheckedLocking)]
 public partial class DbConnectionPool

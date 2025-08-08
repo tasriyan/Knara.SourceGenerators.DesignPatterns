@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using CodeGenerator.Patterns.Singleton;
 
-namespace Demo.Singleton.ConsoleApp;
+namespace Demo.Singleton.DotNetCore;
 
 // HIGH-PERFORMANCE SINGLETON - Lock-free access for read-heavy scenarios
 [Singleton(Strategy = SingletonStrategy.LockFree)]

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using CodeGenerator.Patterns.Singleton;
 
-namespace Demo.Singleton.ConsoleApp;
+namespace Demo.Singleton.DotNetCore;
 
 // BASIC SINGLETON - Simple, thread-safe, lazy initialization
 [Singleton(Strategy = SingletonStrategy.Lazy)]

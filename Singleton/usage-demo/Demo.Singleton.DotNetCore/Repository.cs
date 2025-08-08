@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using CodeGenerator.Patterns.Singleton;
 
-namespace Demo.Singleton.ConsoleApp;
+namespace Demo.Singleton.DotNetCore;
 
 public interface IEntity
 {

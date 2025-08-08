@@ -1,6 +1,6 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using Demo.Singleton.ConsoleApp;
+using Demo.Singleton.DotNetCore;
 
 await SingletonUsageDemo.DemonstrateUsage();
 

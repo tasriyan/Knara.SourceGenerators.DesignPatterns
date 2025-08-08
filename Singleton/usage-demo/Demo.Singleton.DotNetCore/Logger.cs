@@ -1,6 +1,6 @@
 ﻿using CodeGenerator.Patterns.Singleton;
 
-namespace Demo.Singleton.ConsoleApp;
+namespace Demo.Singleton.DotNetCore;
 
 // EAGER SINGLETON - Pre-initialized at startup for ultra-fast access
 [Singleton(Strategy = SingletonStrategy.Eager)]
