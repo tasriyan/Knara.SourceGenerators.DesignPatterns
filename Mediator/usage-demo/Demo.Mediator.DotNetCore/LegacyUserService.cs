@@ -1,10 +1,10 @@
 ﻿using System.Runtime.CompilerServices;
 using CodeGenerator.Patterns.Mediator;
-using Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures;
-using Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures.Core;
+using Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures;
+using Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures.Core;
 using Microsoft.Extensions.Logging;
 
-namespace Demo.Mediator.ConsoleApp;
+namespace Demo.Mediator.DotNetCore;
 
 // LegacyUserService demonstrates how to use the legacy request handler attributes
 // for handling user-related operations in a vertical slice architecture.

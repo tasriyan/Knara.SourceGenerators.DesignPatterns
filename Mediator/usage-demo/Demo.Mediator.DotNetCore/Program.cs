@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using CodeGenerator.Patterns.Mediator;
-using Demo.Mediator.ConsoleApp;
-using Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures;
-using Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures.Core;
+using Demo.Mediator.DotNetCore;
+using Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures;
+using Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures.Core;
 using Microsoft.Extensions.Logging;
 
 var services = ServiceCollectionExtensions.RegisterServices();

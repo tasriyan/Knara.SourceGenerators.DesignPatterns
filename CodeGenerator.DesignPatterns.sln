@@ -47,7 +47,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mediator", "Mediator", "{44
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeGenerator.Patterns.Mediator", "Mediator\CodeGenerator.Patterns.Mediator\CodeGenerator.Patterns.Mediator.csproj", "{CC84C4CE-5649-4468-8ED6-C6DAD589EE9D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Mediator.ConsoleApp", "Mediator\usage-demo\Demo.Mediator.ConsoleApp\Demo.Mediator.ConsoleApp.csproj", "{B6EB01FC-C053-4587-8601-0D2B59EE0EE5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Mediator.DotNetCore", "Mediator\usage-demo\Demo.Mediator.DotNetCore\Demo.Mediator.DotNetCore.csproj", "{B6EB01FC-C053-4587-8601-0D2B59EE0EE5}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Singleton.UnitTests", "Singleton\tests\Singleton.UnitTests\Singleton.UnitTests.csproj", "{A75F6A14-A70E-43CD-A996-C69D2184E997}"
 EndProject

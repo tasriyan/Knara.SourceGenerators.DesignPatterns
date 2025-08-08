@@ -1,8 +1,8 @@
 ﻿using CodeGenerator.Patterns.Mediator;
-using Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures.Core;
+using Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures.Core;
 using Microsoft.Extensions.Logging;
 
-namespace Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures;
+namespace Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures;
 
 [Command(Name = "CreateUserCommand", ResponseType = typeof(bool))]
 public record CreateUserRequest(int UserId, string Email, string FirstName, string LastName);

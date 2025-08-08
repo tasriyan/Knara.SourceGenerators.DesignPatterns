@@ -1,4 +1,4 @@
-﻿namespace Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures.Core;
+﻿namespace Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures.Core;
 
 public class User
 {

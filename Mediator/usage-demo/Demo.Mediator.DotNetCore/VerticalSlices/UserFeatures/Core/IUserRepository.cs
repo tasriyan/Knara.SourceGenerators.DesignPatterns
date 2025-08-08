@@ -1,7 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 
-namespace Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures.Core;
+namespace Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures.Core;
 
 public interface IUserRepository
 {

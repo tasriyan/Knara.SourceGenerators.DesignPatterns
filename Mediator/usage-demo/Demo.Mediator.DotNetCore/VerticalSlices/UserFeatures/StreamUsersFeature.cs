@@ -1,8 +1,8 @@
 ﻿using System.Runtime.CompilerServices;
 using CodeGenerator.Patterns.Mediator;
-using Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures.Core;
+using Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures.Core;
 
-namespace Demo.Mediator.ConsoleApp.VerticalSlices.UserFeatures;
+namespace Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures;
 
 [StreamQuery(Name = "UsersStreamQuery", ResponseType = typeof(User))]
 public record BulkUsersRequestWithBuffer(string? EmailFilter, int? BufferSize = null);
@@ -54,7 +54,7 @@ public class BulkUsersService
 // 		_service = service;
 // 	}
 //
-// 	public async IAsyncEnumerable<Demo.Mediator.ConsoleApp.Core.User> Handle(UsersStreamQuery query, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+// 	public async IAsyncEnumerable<Demo.Mediator.DotNetCore.Core.User> Handle(UsersStreamQuery query, [EnumeratorCancellation] CancellationToken cancellationToken = default)
 // 	{
 // 		var originalRequest = new BulkUsersRequestWithBuffer(query.EmailFilter, query.BufferSize);
 //
