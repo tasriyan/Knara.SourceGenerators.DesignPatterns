@@ -171,8 +171,3 @@ If you're building new applications, use MediatR. If you're modernizing legacy s
 ---
 
 *Consider this a stepping stone toward full mediator adoption rather than a permanent architectural decision.*
-
----
-## License
-
-Apache License 2.0

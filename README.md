@@ -99,4 +99,5 @@ Special thanks to [Mel Grubb](https://github.com/mel-gub) for his excellent Dome
 
 ---
 
-*These generators bridge the gap between legacy constraints and modern development practices, enabling teams to adopt proven patterns without requiring extensive upfront training or risky architectural changes.*
+### License
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.

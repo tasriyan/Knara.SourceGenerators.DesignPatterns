@@ -177,7 +177,3 @@ public static class UserDecoratorFactory
 2. Use IDE "Go to Definition" on factory methods
 3. Check build output for source generator warnings
 4. Verify attribute namespaces are correctly imported
-
-## License
-
-Apache License 2.0
