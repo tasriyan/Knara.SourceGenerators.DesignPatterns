@@ -11,6 +11,16 @@ A C# source generator that creates fluent builder classes for complex object con
 **Solution**: Generate proven, consistent builder implementations that provide modern object construction patterns for legacy frameworks.
 
 ## Quick Start
+Add the source generator to your project:
+```bash
+<ItemGroup> <ProjectReference Include="path/to/CodeGenerator.DesignPatterns.Builder.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
+```
+
+Or via NuGet (when published):
+```bash
+dotnet add package CodeGenerator.DesignPatterns.Builder
+```
+If you are using the generator in .net 4.+ projects, refer to [this guide](../dotnet-legacy-guide.md) for additional steps.
 
 ```csharp
 using CodeGenerator.Patterns.Builder;
@@ -209,11 +219,6 @@ public class ApiClientConfig
 - **Direct method calls**: Faster than dynamic construction
 - **Validation overhead**: Custom validators run at build time
 
-### When Performance Matters
-- **High-frequency construction**: Consider object pooling or caching
-- **Memory-constrained**: Direct constructors may be better
-- **Startup performance**: Builders add initialization overhead
-
 ## Best Practices
 
 ### ✅ Good Uses
@@ -315,16 +320,6 @@ var config = DatabaseConfigBuilder.Create()
     .Build();  // Immutable result
 ```
 
-## Common Issues & Solutions
-
-| Issue | Solution |
-|-------|----------|
-| **"Required property not set"** | Use `CanBuild()` to check before calling `Build()` |
-| **Validation failures** | Check validator method signatures match exactly |
-| **Builder naming conflicts** | Use `BuilderName` attribute to specify custom names |
-| **Missing collection methods** | Verify `[BuilderCollection]` attribute is applied |
-| **Performance issues** | Consider object pooling or direct constructors for hot paths |
-
 ## Integration with Legacy Code
 
 ### Gradual Adoption
@@ -346,7 +341,5 @@ public class LegacyClass
     public string Name { get; }
 }
 ```
-
 ---
 
-*This generator provides modern object construction patterns for legacy .NET Framework applications, enabling safer and more maintainable code without requiring framework upgrades.*

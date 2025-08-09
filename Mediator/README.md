@@ -41,6 +41,18 @@ public class LegacyUserService
 
 Both generate the same mediator infrastructure but serve different migration strategies.
 
+## Quick Start
+Add the source generator to your project:
+```bash
+<ItemGroup> <ProjectReference Include="path/to/CodeGenerator.DesignPatterns.Mediator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
+```
+
+Or via NuGet (when published):
+```bash
+dotnet add package CodeGenerator.DesignPatterns.Mediator
+```
+If you are using the generator in .net 4.+ projects, refer to [this guide](../dotnet-legacy-guide.md) for additional steps.
+
 ## Usage Patterns
 
 ### CQRS-Style Usage
@@ -64,8 +76,10 @@ await mediator.Send(new CreateUserRequest { Email = "test@example.com" });
 ## Registration
 
 ```csharp
+// In your Startup.cs or Program.cs if using .NET 6+ 
 services.AddDeclarativeMediator(); // Auto-registers all handlers and services
 ```
+If you are using the generator in .net 4.+ projects, you need to manually register the generated types and mediator.
 
 ## When to Use Each Pattern
 
@@ -164,10 +178,6 @@ Example generated structure:
 
 ## Bottom Line
 
-This generator solves a specific problem: **safely introducing mediator patterns to existing codebases** while supporting modern CQRS development. It's a bridge tool, not an end destination.
-
-If you're building new applications, use MediatR. If you're modernizing legacy systems and need both safety and performance, this generator provides a practical path forward.
+Consider this a stepping stone toward full mediator adoption rather than a permanent architectural decision.
 
 ---
-
-*Consider this a stepping stone toward full mediator adoption rather than a permanent architectural decision.*

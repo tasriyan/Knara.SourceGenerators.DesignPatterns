@@ -9,10 +9,20 @@ A C# source generator that creates thread-safe singleton implementations for .NE
 **Solution**: Generate proven, thread-safe singleton implementations automatically with built-in validation for common concurrency issues.
 
 ## Quick Start
+1. Add the source generator to your project:
+```bash
+<ItemGroup> <ProjectReference Include="path/to/CodeGenerator.DesignPatterns.Singleton.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
+```
 
-1. Add the `[Singleton]` attribute to your partial class
-2. Make sure your class has a private constructor
-3. The generator creates the singleton implementation automatically
+Or via NuGet (when published):
+```bash
+dotnet add package CodeGenerator.DesignPatterns.Singleton
+```
+If you are using the generator in .net 4.+ projects, refer to [this guide](../dotnet-legacy-guide.md) for additional steps.
+
+2. Add the `[Singleton]` attribute to your partial class
+3. Make sure your class has a private constructor
+4. The generator creates the singleton implementation automatically
 
 ```csharp
 using CodeGenerator.Patterns.Singleton;
@@ -284,21 +294,4 @@ public partial class MyService
     // All singleton logic generated automatically
 }
 ```
-
-## Troubleshooting
-
-**Issue**: "Class must be partial"
-**Solution**: Add `partial` keyword to your class declaration
-
-**Issue**: "Public constructor warning"  
-**Solution**: Make your constructor private
-
-**Issue**: "Non-thread-safe collection warning"
-**Solution**: Replace with thread-safe alternatives:
-- `Dictionary` → `ConcurrentDictionary`
-- `List` → `ConcurrentBag` or `ConcurrentQueue`
-- `HashSet` → `ConcurrentDictionary<T, byte>`
-
 ---
-
-*This generator helps create reliable singleton implementations for legacy .NET Framework applications where dependency injection is not available.*

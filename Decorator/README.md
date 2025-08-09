@@ -9,18 +9,17 @@ A C# source generator that automatically creates fluent factory methods for the 
 - **Flexible Constructor Injection**: Supports decorators with varying constructor parameters
 - **Clean Fluent API**: Method chaining for readable decorator composition
 
+## Quick Start
 Add the source generator to your project:
 ```bash
-<ItemGroup> <ProjectReference Include="path/to/SourceGenerators.DesignPatterns.Decorator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
+<ItemGroup> <ProjectReference Include="path/to/CodeGenerator.DesignPatterns.Decorator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
 ```
 
-Or via NuGet (when published): 
+Or via NuGet (when published):
 ```bash
-dotnet add package SourceGenerators.DesignPatterns.Decorator
+dotnet add package CodeGenerator.DesignPatterns.Decorator
 ```
-
-
-## Quick Start
+If you are using the generator in .net 4.+ projects, refer to [this guide](../dotnet-legacy-guide.md) for additional steps.
 
 ### 1. Mark Your Interface
 
@@ -145,35 +144,4 @@ public static class UserDecoratorFactory
 		return services;
 	}
 ```
-
-## Requirements
-
-- .NET Standard 2.0 or higher
-- C# 8.0 or higher (for source generators)
-- Interface-based service design
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Factory not generated**
-   - Ensure interface has `[GenerateDecoratorFactory]` attribute
-   - Verify interface is public
-   - Check for compilation errors
-
-2. **Extension method not found**
-   - Verify decorator class has `[Decorator(Type = "...")]` attribute
-   - Ensure decorator implements the correct interface
-   - Check constructor parameter order (interface first)
-
-3. **Constructor parameters missing**
-   - Verify constructor parameter types are accessible
-   - Check parameter names match expected conventions
-   - Ensure using statements are correct
-
-### Debugging Tips
-
-1. Enable source generator output to see generated code
-2. Use IDE "Go to Definition" on factory methods
-3. Check build output for source generator warnings
-4. Verify attribute namespaces are correctly imported
+---

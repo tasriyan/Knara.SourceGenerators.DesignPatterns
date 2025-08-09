@@ -91,13 +91,9 @@ This approach is particularly valuable for legacy applications where performance
 
 1. Choose the generator that addresses your most pressing modernization need
 2. Follow the specific README for detailed setup and usage instructions
-3. Instruction on how to integrate the generator into your legacy project can be found in the [README-HOWTO.md](./README-HOWTO.md) file
-
-## Inspiration and Learning
-
-Special thanks to [Mel Grubb](https://github.com/mel-gub) for his excellent Dometrain course that inspired this source generation approach. The course provided the technical foundation that made this modernization strategy possible.
-
----
+3. Instruction on how to integrate the generator into your legacy project can be found in this [guide](./dotnet-legacy-guide.md)
 
 ### License
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+All the projects in this repository are licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+---
