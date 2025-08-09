@@ -91,9 +91,7 @@ This approach is particularly valuable for legacy applications where performance
 
 1. Choose the generator that addresses your most pressing modernization need
 2. Follow the specific README for detailed setup and usage instructions
-3. Start with new features before retrofitting existing code
-4. Use diagnostic warnings as learning opportunities
-5. Gradually expand usage as team comfort increases
+3. Instruction on how to integrate the generator into your legacy project can be found in the [README-HOWTO.md](./README-HOWTO.md) file
 
 ## Inspiration and Learning
 
