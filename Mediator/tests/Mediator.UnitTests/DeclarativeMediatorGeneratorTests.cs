@@ -96,7 +96,7 @@ namespace TestNamespace
         generatedSources.ShouldContain(s => s.HintName == "GeneratedMediator.g.cs");
 
         var requestSource = generatedSources.First(s => s.HintName == "GetUserQuery.Request.g.cs").SourceText.ToString();
-        requestSource.ShouldContain("public class GetUserQuery : IQuery<string>");
+        requestSource.ShouldContain("public class GetUserQuery : CodeGenerator.Patterns.Mediator.IQuery<string>");
         requestSource.ShouldContain("public int UserId { get; set; }");
         requestSource.ShouldContain("public string Name { get; set; } = \"\";");
     }
@@ -140,7 +140,7 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var requestSource = generatedSources.First(s => s.HintName == "CreateUser.Request.g.cs").SourceText.ToString();
         
-        requestSource.ShouldContain("public class CreateUser : ICommand");
+        requestSource.ShouldContain("public class CreateUser : CodeGenerator.Patterns.Mediator.ICommand");
         requestSource.ShouldContain("public string Name { get; set; } = \"\";");
         requestSource.ShouldContain("public int Age { get; set; }");
     }
@@ -184,7 +184,7 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var requestSource = generatedSources.First(s => s.HintName == "CreateUser.Request.g.cs").SourceText.ToString();
         
-        requestSource.ShouldContain("public class CreateUser : ICommand<int>");
+        requestSource.ShouldContain("public class CreateUser : CodeGenerator.Patterns.Mediator.ICommand<int>");
     }
 
     [Fact]
@@ -227,7 +227,7 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var requestSource = generatedSources.First(s => s.HintName == "GetUsers.Request.g.cs").SourceText.ToString();
         
-        requestSource.ShouldContain("public class GetUsers : IStreamQuery<string>");
+        requestSource.ShouldContain("public class GetUsers : CodeGenerator.Patterns.Mediator.IStreamQuery<string>");
     }
 
     [Fact]
@@ -266,7 +266,7 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var requestSource = generatedSources.First(s => s.HintName == "GetUser.Request.g.cs").SourceText.ToString();
         
-        requestSource.ShouldContain("public class GetUser : IQuery<string>");
+        requestSource.ShouldContain("public class GetUser : CodeGenerator.Patterns.Mediator.IQuery<string>");
         requestSource.ShouldContain("public int UserId { get; set; }");
         requestSource.ShouldContain("public string Name { get; set; } = \"\";");
     }
@@ -386,14 +386,14 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var mediatorSource = generatedSources.First(s => s.HintName == "GeneratedMediator.g.cs").SourceText.ToString();
         
-        mediatorSource.ShouldContain("public sealed class GeneratedMediator : IMediator");
-        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(IQuery<TResponse>");
-        mediatorSource.ShouldContain("Task Send(ICommand command");
-        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(ICommand<TResponse>");
+        mediatorSource.ShouldContain("public sealed class GeneratedMediator : CodeGenerator.Patterns.Mediator.IMediator");
+        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.IQuery<TResponse>");
+        mediatorSource.ShouldContain("Task Send(CodeGenerator.Patterns.Mediator.ICommand command");
+        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.ICommand<TResponse>");
         mediatorSource.ShouldContain("Task Publish<TEvent>");
         mediatorSource.ShouldContain("IAsyncEnumerable<TResponse> CreateStream<TResponse>");
-        mediatorSource.ShouldContain("Task Send(IRequest request"); // Legacy support
-        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(IRequest<TResponse>"); // Legacy support
+        mediatorSource.ShouldContain("Task Send(CodeGenerator.Patterns.Mediator.IRequest request"); // Legacy support
+        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.IRequest<TResponse>"); // Legacy support
     }
 
     [Fact]
