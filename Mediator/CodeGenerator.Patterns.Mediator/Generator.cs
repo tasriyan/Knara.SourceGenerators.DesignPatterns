@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -318,7 +319,7 @@ namespace CodeGenerator.Patterns.Mediator
         }
 
         // Extract properties from the class/record
-        var properties = ExtractProperties(symbol, isRecord);
+        var properties = ExtractProperties(symbol, isRecord, out bool hasMatchingConstructor);
 
         var queryAttr = GetAttribute(symbol, "QueryAttribute");
         if (queryAttr != null)
@@ -335,7 +336,7 @@ namespace CodeGenerator.Patterns.Mediator
                 return new RequestInfoResult(null, diagnostics);
             }
             var responseType = GetAttributeTypeValue(queryAttr, "ResponseType");
-            var requestInfo = new RequestInfo(symbol.Name, name, RequestType.Query, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+            var requestInfo = new RequestInfo(symbol.Name, name, RequestType.Query, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord, hasMatchingConstructor);
             return new RequestInfoResult(requestInfo, diagnostics);
         }
 
@@ -354,7 +355,7 @@ namespace CodeGenerator.Patterns.Mediator
                 return new RequestInfoResult(null, diagnostics);
             }
             var responseType = GetAttributeTypeValue(commandAttr, "ResponseType");
-            var requestInfo = new RequestInfo(symbol.Name, name, RequestType.Command, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+            var requestInfo = new RequestInfo(symbol.Name, name, RequestType.Command, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord, hasMatchingConstructor);
             return new RequestInfoResult(requestInfo, diagnostics);
         }
 
@@ -373,16 +374,17 @@ namespace CodeGenerator.Patterns.Mediator
                 return new RequestInfoResult(null, diagnostics);
             }
             var responseType = GetAttributeTypeValue(streamQueryAttr, "ResponseType");
-            var requestInfo = new RequestInfo(symbol.Name, name, RequestType.StreamQuery, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord);
+            var requestInfo = new RequestInfo(symbol.Name, name, RequestType.StreamQuery, responseType, symbol.ContainingNamespace?.ToDisplayString() ?? "", properties, isRecord, hasMatchingConstructor);
             return new RequestInfoResult(requestInfo, diagnostics);
         }
 
         return null;
     }
 
-    private static List<PropertyInfo> ExtractProperties(INamedTypeSymbol symbol, bool isRecord)
+    private static List<PropertyInfo> ExtractProperties(INamedTypeSymbol symbol, bool isRecord, out bool hasMatchingConstructor)
     {
         var properties = new List<PropertyInfo>();
+        hasMatchingConstructor = false;
 
         if (isRecord)
         {
@@ -390,22 +392,87 @@ namespace CodeGenerator.Patterns.Mediator
             var primaryConstructor = symbol.Constructors.FirstOrDefault(c => c.Parameters.Length > 0);
             if (primaryConstructor != null)
             {
-                foreach (var parameter in primaryConstructor.Parameters)
+                hasMatchingConstructor = true;
+                for (int i = 0; i < primaryConstructor.Parameters.Length; i++)
                 {
+                    var parameter = primaryConstructor.Parameters[i];
                     var typeName = parameter.Type.ToDisplayString();
                     var propertyName = char.ToUpper(parameter.Name[0]) + parameter.Name.Substring(1); // Convert to PascalCase
                     var initializer = GetPropertyInitializerFromType(parameter.Type, parameter.NullableAnnotation);
                     
-                    properties.Add(new PropertyInfo(typeName, propertyName, initializer));
+                    properties.Add(new PropertyInfo(typeName, propertyName, initializer, i, parameter.Name));
                 }
             }
         }
         else
         {
             // For classes, extract public properties
+            var publicProperties = new List<IPropertySymbol>();
+            bool hasGetOnlyProperties = false;
+            
             foreach (var member in symbol.GetMembers())
             {
                 if (member is IPropertySymbol property && property.DeclaredAccessibility == Accessibility.Public)
+                {
+                    publicProperties.Add(property);
+                    
+                    // Check if property is get-only (no public setter)
+                    if (property.SetMethod == null || property.SetMethod.DeclaredAccessibility != Accessibility.Public)
+                    {
+                        hasGetOnlyProperties = true;
+                    }
+                }
+            }
+
+            // If we have get-only properties, we MUST use constructor syntax
+            if (hasGetOnlyProperties)
+            {
+                hasMatchingConstructor = true; // Force constructor syntax
+                
+                // Try to find a constructor that matches
+                var matchingConstructor = FindMatchingConstructor(symbol, publicProperties);
+                
+                if (matchingConstructor != null)
+                {
+                    // Use the matching constructor parameter order
+                    for (int i = 0; i < matchingConstructor.Parameters.Length; i++)
+                    {
+                        var parameter = matchingConstructor.Parameters[i];
+                        var typeName = parameter.Type.ToDisplayString();
+                        
+                        // Find corresponding property
+                        var correspondingProperty = publicProperties.FirstOrDefault(p => 
+                            string.Equals(p.Name, parameter.Name, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(p.Name, char.ToUpper(parameter.Name[0]) + parameter.Name.Substring(1), StringComparison.OrdinalIgnoreCase));
+                        
+                        var propertyName = correspondingProperty?.Name ?? 
+                                         (char.ToUpper(parameter.Name[0]) + parameter.Name.Substring(1));
+                        
+                        var initializer = GetPropertyInitializerFromType(parameter.Type, parameter.NullableAnnotation);
+                        
+                        properties.Add(new PropertyInfo(typeName, propertyName, initializer, i, parameter.Name));
+                    }
+                }
+                else
+                {
+                    // No matching constructor found, but still extract properties
+                    // and mark them for constructor usage (will use property order)
+                    for (int i = 0; i < publicProperties.Count; i++)
+                    {
+                        var property = publicProperties[i];
+                        var typeName = property.Type.ToDisplayString();
+                        var propertyName = property.Name;
+                        var initializer = GetPropertyInitializer(property);
+                        
+                        properties.Add(new PropertyInfo(typeName, propertyName, initializer, i, propertyName.ToLower()));
+                    }
+                }
+            }
+            else
+            {
+                // No get-only properties, can use object initializer approach
+                hasMatchingConstructor = false;
+                foreach (var property in publicProperties)
                 {
                     var typeName = property.Type.ToDisplayString();
                     var propertyName = property.Name;
@@ -417,6 +484,45 @@ namespace CodeGenerator.Patterns.Mediator
         }
         
         return properties;
+    }
+
+    // NEW: Find a constructor that matches the public properties
+    private static IMethodSymbol? FindMatchingConstructor(INamedTypeSymbol symbol, List<IPropertySymbol> publicProperties)
+    {
+        foreach (var constructor in symbol.Constructors)
+        {
+            // Accept public, internal, or no explicit modifier (which defaults to public for constructors in classes)
+            if (constructor.DeclaredAccessibility == Accessibility.Private || 
+                constructor.DeclaredAccessibility == Accessibility.Protected) continue;
+            if (constructor.Parameters.Length == 0) continue;
+
+            // Check if constructor parameters can be matched to properties
+            bool allParametersMatch = true;
+            var matchedProperties = new HashSet<string>();
+            
+            foreach (var parameter in constructor.Parameters)
+            {
+                var matchingProperty = publicProperties.FirstOrDefault(p => 
+                    string.Equals(p.Name, parameter.Name, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(p.Name, char.ToUpper(parameter.Name[0]) + parameter.Name.Substring(1), StringComparison.OrdinalIgnoreCase));
+
+                if (matchingProperty == null)
+                {
+                    allParametersMatch = false;
+                    break;
+                }
+
+                matchedProperties.Add(matchingProperty.Name);
+            }
+
+            // If we found a constructor where all parameters match properties, use it
+            if (allParametersMatch && matchedProperties.Count > 0)
+            {
+                return constructor;
+            }
+        }
+
+        return null;
     }
 
     private static string GetPropertyInitializerFromType(ITypeSymbol type, NullableAnnotation nullableAnnotation)
@@ -891,6 +997,7 @@ namespace CodeGenerator.Patterns.Mediator
             sb.AppendLine("using System.Collections.Generic;");
             sb.AppendLine("using System.Runtime.CompilerServices;");
         }
+        sb.AppendLine("using System.Linq;");
         sb.AppendLine("using System.Threading;");
         sb.AppendLine("using System.Threading.Tasks;");
         sb.AppendLine();
@@ -973,19 +1080,38 @@ namespace CodeGenerator.Patterns.Mediator
             ? $"{request.Namespace}.{request.ClassName}"
             : request.ClassName;
 
-        if (request.IsRecord)
+        // Use constructor syntax for records, classes with matching constructor, or if any property has constructor parameter info
+        bool useConstructorSyntax = request.IsRecord || 
+                                   request.HasMatchingConstructor || 
+                                   request.Properties.Any(p => p.ConstructorParameterIndex >= 0);
+
+        if (useConstructorSyntax)
         {
-            // For records, use primary constructor
+            // For records or classes with matching constructor, use constructor syntax
             var constructorArgs = new List<string>();
-            foreach (var property in request.Properties)
+            
+            // Sort properties by constructor parameter index for correct ordering
+            var sortedProperties = request.Properties
+                .Where(p => p.ConstructorParameterIndex >= 0)
+                .OrderBy(p => p.ConstructorParameterIndex)
+                .ToList();
+            
+            // If no properties have constructor indices, use all properties in declaration order
+            if (!sortedProperties.Any())
+            {
+                sortedProperties = request.Properties.ToList();
+            }
+            
+            foreach (var property in sortedProperties)
             {
                 constructorArgs.Add($"{parameterName}.{property.Name}");
             }
+            
             sb.AppendLine($"        var originalRequest = new {originalRequestFullName}({string.Join(", ", constructorArgs)});");
         }
         else
         {
-            // For classes, use object initializer
+            // For classes without matching constructor, use object initializer
             sb.AppendLine($"        var originalRequest = new {originalRequestFullName}");
             sb.AppendLine("        {");
             foreach (var property in request.Properties)
@@ -1244,8 +1370,8 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("public sealed class GeneratedMediator : CodeGenerator.Patterns.Mediator.IMediator");
         sb.AppendLine("{");
 
-        // Generate private fields for each handler
-        var allHandlers = new List<(string FieldName, string TypeName)>();
+        // Collect all handlers and sort them alphabetically by class name
+        var allHandlers = new List<(string FieldName, string TypeName, string ClassName)>();
 
         foreach (var handler in handlers)
         {
@@ -1254,8 +1380,7 @@ namespace CodeGenerator.Patterns.Mediator
                 : handler.HandlerName;
             var fieldName = $"_{handler.HandlerName.Substring(0, 1).ToLower()}{handler.HandlerName.Substring(1)}";
             
-            sb.AppendLine($"    private readonly {handlerFullName} {fieldName};");
-            allHandlers.Add((fieldName, handlerFullName));
+            allHandlers.Add((fieldName, handlerFullName, handler.HandlerName));
         }
 
         foreach (var legacyMethod in legacyMethods)
@@ -1265,16 +1390,24 @@ namespace CodeGenerator.Patterns.Mediator
                 : legacyMethod.HandlerName;
             var fieldName = $"_{legacyMethod.HandlerName.Substring(0, 1).ToLower()}{legacyMethod.HandlerName.Substring(1)}";
             
-            sb.AppendLine($"    private readonly {handlerFullName} {fieldName};");
-            allHandlers.Add((fieldName, handlerFullName));
+            allHandlers.Add((fieldName, handlerFullName, legacyMethod.HandlerName));
+        }
+
+        // Sort alphabetically by class name for consistent ordering
+        allHandlers = allHandlers.OrderBy(h => h.ClassName).ToList();
+
+        // Generate private fields for each handler in sorted order
+        foreach (var (fieldName, typeName, className) in allHandlers)
+        {
+            sb.AppendLine($"    private readonly {typeName} {fieldName};");
         }
 
         sb.AppendLine();
 
-        // Generate constructor with all handlers as parameters
+        // Generate constructor with all handlers as parameters in sorted order
         sb.AppendLine("    public GeneratedMediator(");
         var constructorParams = new List<string>();
-        foreach (var (fieldName, typeName) in allHandlers)
+        foreach (var (fieldName, typeName, className) in allHandlers)
         {
             constructorParams.Add($"        {typeName} {fieldName.Substring(1)}");
         }
@@ -1282,7 +1415,7 @@ namespace CodeGenerator.Patterns.Mediator
         sb.AppendLine("    )");
         sb.AppendLine("    {");
 
-        foreach (var (fieldName, _) in allHandlers)
+        foreach (var (fieldName, _, _) in allHandlers)
         {
             sb.AppendLine($"        {fieldName} = {fieldName.Substring(1)};");
         }

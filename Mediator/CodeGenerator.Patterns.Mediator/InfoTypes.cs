@@ -24,14 +24,20 @@ public class PropertyInfo
     public string Type { get; }
     public string Name { get; }
     public string Initializer { get; }
+    public int ConstructorParameterIndex { get; set; } // NEW: for constructor parameter ordering
+    public string ConstructorParameterName { get; set; }
     public PropertyInfo(
         string type,
         string name,
-        string initializer)
+        string initializer,
+        int constructorParameterIndex = -1, 
+        string constructorParameterName = "")
     {
         Type = type;
         Name = name;
         Initializer = initializer;
+        ConstructorParameterIndex = constructorParameterIndex;
+        ConstructorParameterName = constructorParameterName;
     }
 }
 
@@ -58,6 +64,8 @@ public class RequestInfo
     public string Namespace { get; }
     public List<PropertyInfo> Properties { get; }
     public bool IsRecord { get; }
+    public bool HasMatchingConstructor { get; set; } // NEW: indicates if class has constructor matching properties
+
     public RequestInfo(
         string className,
         string name,
@@ -65,7 +73,8 @@ public class RequestInfo
         string? reponseType,
         string ns,
         List<PropertyInfo> properties,
-        bool isRecord)
+        bool isRecord, 
+        bool hasMatchingConstructor = false)
     {
         ClassName = className;
         Name = name;
@@ -74,6 +83,7 @@ public class RequestInfo
         Namespace = ns;
         Properties = properties;
         IsRecord = isRecord;
+        HasMatchingConstructor = hasMatchingConstructor;
     }
 }
 
