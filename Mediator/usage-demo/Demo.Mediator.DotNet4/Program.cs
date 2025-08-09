@@ -20,14 +20,14 @@ namespace Demo.Mediator.DotNet4
 	        var userActivityLogger = new UserActivityLogger();
 
 	        var mediator = new GeneratedMediator(
+		        new WelcomeEmailHandler(emailService),	
+		        new LogUserCreationHandler(userActivityLogger),		        
 		        new CreateUserCommandHandler(createUserService),
+		        new AnalyticsHandler(analyticsService),		
+		        new UpdateUserCommandHandler(updateUserService),		        
 		        new GetUserHandler(getUserService),
 		        new GetUserAnalyticsHandler(userCountService),
 		        new UsersStreamHandler(userStreamHandlerService),
-		        new UpdateUserCommandHandler(updateUserService),
-		        new AnalyticsHandler(analyticsService),
-		        new WelcomeEmailHandler(emailService),
-		        new LogUserCreationHandler(userActivityLogger),
 		        new LegacyUserGetHandler(legacyService),
 		        new LegacyUserCreateHandler(legacyService),
 		        new LegacyUserUpdateUserHandler(legacyService)
