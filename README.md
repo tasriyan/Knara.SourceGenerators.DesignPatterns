@@ -16,7 +16,7 @@ The goal was to make advanced patterns accessible to developers who hadn't yet m
 
 ## Why Source Generation?
 
-I was inspired to pursue source generation after completing Mel Gubb's excellent course [From Zero to Hero: Source Generators in C#](https://courses.dometrain.com/courses/take/from-zero-to-hero-source-generators-in-csharp) on Dometrain. 
+I was inspired to pursue source generation after completing Mel Grubb's excellent course [From Zero to Hero: Source Generators in C#](https://courses.dometrain.com/courses/take/from-zero-to-hero-source-generators-in-csharp) on Dometrain. 
 
 Source generation offered distinct advantages over traditional libraries for this modernization effort:
 
@@ -28,28 +28,28 @@ Source generation offered distinct advantages over traditional libraries for thi
 
 ## Generators Overview
 
-### 🚀 [Mediator Pattern Generator](./mediator/readme.md)
+### 🚀 [Mediator Pattern Generator](./Mediator/README.md)
 **Purpose**: Dual-pattern mediator supporting both CQRS-style development and legacy method retrofitting
 
 **Value**: Enables gradual adoption of mediator patterns without breaking existing service layer architecture. Provides compile-time performance advantages over MediatR through direct method dispatch.
 
 **Best for**: Teams transitioning from direct service calls to centralized request handling, CQRS adoption, legacy code modernization.
 
-### 🔒 [Singleton Pattern Generator](./singleton/readme.md)  
+### 🔒 [Singleton Pattern Generator](./Singleton/README.md)  
 **Purpose**: Thread-safe singleton implementations with multiple performance strategies
 
 **Value**: Prevents concurrency bugs common in manual singleton implementations. Essential for .NET Framework applications without dependency injection containers.
 
 **Best for**: Legacy applications needing shared state management, teams unfamiliar with thread-safety concerns, performance-critical singleton scenarios.
 
-### 🏗️ [Builder Pattern Generator](./builder/readme.md)
+### 🏗️ [Builder Pattern Generator](./Builder/README.md)
 **Purpose**: Fluent builder APIs for complex object construction with validation
 
 **Value**: Provides modern object construction patterns for frameworks lacking `init` properties and nullable reference types. Enables immutable object creation with comprehensive validation.
 
 **Best for**: Legacy .NET Framework applications, complex configuration objects, teams needing consistent object construction patterns.
 
-### 🎨 [Decorator Pattern Generator](./decorator/readme.md)
+### 🎨 [Decorator Pattern Generator](./Decorator/README.md)
 **Purpose**: Fluent decorator composition APIs
 
 **Value**: Simplifies decorator pattern implementation and composition (though primarily a technical exercise rather than solving a critical business need).
