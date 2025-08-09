@@ -20,17 +20,17 @@ namespace Demo.Mediator.DotNet4
 	        var userActivityLogger = new UserActivityLogger();
 
 	        var mediator = new GeneratedMediator(
-		        new WelcomeEmailHandler(emailService),	
-		        new LogUserCreationHandler(userActivityLogger),		        
-		        new CreateUserCommandHandler(createUserService),
-		        new AnalyticsHandler(analyticsService),		
-		        new UpdateUserCommandHandler(updateUserService),		        
-		        new GetUserHandler(getUserService),
-		        new GetUserAnalyticsHandler(userCountService),
-		        new UsersStreamHandler(userStreamHandlerService),
-		        new LegacyUserGetHandler(legacyService),
-		        new LegacyUserCreateHandler(legacyService),
-		        new LegacyUserUpdateUserHandler(legacyService)
+			        new AnalyticsHandler(analyticsService),					        
+			        new CreateUserCommandHandler(createUserService),
+			        new GetUserAnalyticsHandler(userCountService),			        
+			        new GetUserHandler(getUserService),		
+			        new LegacyUserCreateHandler(legacyService),
+			        new LegacyUserGetHandler(legacyService),
+			        new LegacyUserUpdateUserHandler(legacyService),			        
+			        new LogUserCreationHandler(userActivityLogger),		
+			        new UpdateUserCommandHandler(updateUserService),				        
+			        new UsersStreamHandler(userStreamHandlerService),	
+			        new WelcomeEmailHandler(emailService)
 	        );
 	        
 	        var sqrsDemo = new MediatorWithCQRSDemo(mediator);

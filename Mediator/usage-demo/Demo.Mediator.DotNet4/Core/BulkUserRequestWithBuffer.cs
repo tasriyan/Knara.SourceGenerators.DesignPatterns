@@ -8,7 +8,7 @@ public class BulkUsersRequestWithBuffer
     public string? EmailFilter { get; }
     public int? BufferSize { get; }
     
-    BulkUsersRequestWithBuffer(string? emailFilter, int? bufferSize = null)
+    public BulkUsersRequestWithBuffer(string? emailFilter, int? bufferSize = null)
     {
         EmailFilter = emailFilter;
         BufferSize = bufferSize;
