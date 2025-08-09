@@ -28,28 +28,28 @@ Source generation offered distinct advantages over traditional libraries for thi
 
 ## Generators Overview
 
-### 🚀 [Mediator Pattern Generator](./docs/mediator-readme.md)
+### 🚀 [Mediator Pattern Generator](./mediator/readme.md)
 **Purpose**: Dual-pattern mediator supporting both CQRS-style development and legacy method retrofitting
 
 **Value**: Enables gradual adoption of mediator patterns without breaking existing service layer architecture. Provides compile-time performance advantages over MediatR through direct method dispatch.
 
 **Best for**: Teams transitioning from direct service calls to centralized request handling, CQRS adoption, legacy code modernization.
 
-### 🔒 [Singleton Pattern Generator](./docs/singleton-readme.md)  
+### 🔒 [Singleton Pattern Generator](./singleton/readme.md)  
 **Purpose**: Thread-safe singleton implementations with multiple performance strategies
 
 **Value**: Prevents concurrency bugs common in manual singleton implementations. Essential for .NET Framework applications without dependency injection containers.
 
 **Best for**: Legacy applications needing shared state management, teams unfamiliar with thread-safety concerns, performance-critical singleton scenarios.
 
-### 🏗️ [Builder Pattern Generator](./docs/builder-readme.md)
+### 🏗️ [Builder Pattern Generator](./builder/readme.md)
 **Purpose**: Fluent builder APIs for complex object construction with validation
 
 **Value**: Provides modern object construction patterns for frameworks lacking `init` properties and nullable reference types. Enables immutable object creation with comprehensive validation.
 
 **Best for**: Legacy .NET Framework applications, complex configuration objects, teams needing consistent object construction patterns.
 
-### 🎨 [Decorator Pattern Generator](./docs/decorator-readme.md)
+### 🎨 [Decorator Pattern Generator](./decorator/readme.md)
 **Purpose**: Fluent decorator composition APIs
 
 **Value**: Simplifies decorator pattern implementation and composition (though primarily a technical exercise rather than solving a critical business need).
@@ -87,24 +87,6 @@ All generators prioritize **compile-time work** over runtime overhead:
 
 This approach is particularly valuable for legacy applications where performance regression is unacceptable.
 
-## Educational Value
-
-Beyond code generation, these tools serve as **teaching aids**:
-
-- **Diagnostic warnings** explain common pitfalls (thread safety, validation, etc.)
-- **Generated code examples** demonstrate correct pattern implementation  
-- **Incremental adoption** allows teams to learn patterns gradually
-- **Code reviews** become opportunities to discuss architectural decisions
-
-## Project Status
-
-This collection represents patterns successfully deployed in production legacy modernization efforts. Each generator has been:
-
-- **Battle-tested** in real enterprise applications
-- **Validated** for thread safety and performance
-- **Documented** with comprehensive usage guides
-- **Designed** for team environments with varying skill levels
-
 ## Getting Started
 
 1. Choose the generator that addresses your most pressing modernization need
@@ -115,7 +97,7 @@ This collection represents patterns successfully deployed in production legacy m
 
 ## Inspiration and Learning
 
-Special thanks to [Mel Gubb](https://github.com/mel-gub) for his excellent Dometrain course that inspired this source generation approach. The course provided the technical foundation that made this modernization strategy possible.
+Special thanks to [Mel Grubb](https://github.com/mel-gub) for his excellent Dometrain course that inspired this source generation approach. The course provided the technical foundation that made this modernization strategy possible.
 
 ---
 
