@@ -11,7 +11,7 @@ public record ProjectConfiguration
 	[BuilderProperty]
 	public string? Description { get; init; }
 
-	[BuilderCollection(AddMethodName = "AddDependency")]
+	[BuilderCollection(AddMethodName = "AddDependency", AddRangeMethodName = "AddDependenciesRange", GenerateClearMethod = true, GenerateCountProperty = true)]
 	public IReadOnlyList<string> Dependencies { get; init; } = Array.Empty<string>();
 
 	[BuilderCollection]
