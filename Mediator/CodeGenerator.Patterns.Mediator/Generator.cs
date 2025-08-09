@@ -673,37 +673,6 @@ namespace CodeGenerator.Patterns.Mediator
         return null;
     }
 
-    private static string? GetAttributeTypeValueAsString(AttributeData attribute, string propertyName)
-    {
-        var namedArg = attribute.NamedArguments.FirstOrDefault(kv => kv.Key == propertyName);
-        if (namedArg.Value.Value is ITypeSymbol typeSymbol)
-        {
-            // Return just the type name, not the full namespace
-            return typeSymbol.Name;
-        }
-        return null;
-    }
-
-    private static int GetAttributeIntValue(AttributeData attribute, string propertyName, int defaultValue)
-    {
-        var namedArg = attribute.NamedArguments.FirstOrDefault(kv => kv.Key == propertyName);
-        if (namedArg.Value.Value is int intValue)
-        {
-            return intValue;
-        }
-        return defaultValue;
-    }
-
-    private static bool GetAttributeBoolValue(AttributeData attribute, string propertyName, bool defaultValue)
-    {
-        var namedArg = attribute.NamedArguments.FirstOrDefault(kv => kv.Key == propertyName);
-        if (namedArg.Value.Value is bool boolValue)
-        {
-            return boolValue;
-        }
-        return defaultValue;
-    }
-
     private static string? FindMethod(INamedTypeSymbol symbol, string[] possibleNames)
     {
         foreach (var name in possibleNames)
@@ -1484,14 +1453,4 @@ namespace CodeGenerator.Patterns.Mediator
 
         return sb.ToString();
     }
-
-    private static string GetMostCommonNamespace(List<HandlerInfo> handlers)
-    {
-        return handlers
-            .Where(h => !string.IsNullOrEmpty(h.Namespace))
-            .GroupBy(h => h.Namespace)
-            .OrderByDescending(g => g.Count())
-            .FirstOrDefault()?.Key ?? "";
-    }
-    
 }
