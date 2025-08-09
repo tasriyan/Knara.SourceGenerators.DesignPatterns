@@ -9,7 +9,6 @@ using System.Text;
 
 namespace CodeGenerator.Patterns.Mediator;
 
-
 [Generator]
 public class DeclarativeMediatorGenerator : IIncrementalGenerator
 {
@@ -165,13 +164,27 @@ namespace CodeGenerator.Patterns.Mediator
                 transform: static (ctx, _) => GetLegacyMethodInfo(ctx))
             .Where(static m => m is not null);
 
+        // Get compilation for framework detection
+        var compilationProvider = context.CompilationProvider;
+
         // Combine all sources and generate
         var combined = requestClasses.Collect()
             .Combine(handlerClasses.Collect())
-            .Combine(legacyMethodHandlers.Collect());
+            .Combine(legacyMethodHandlers.Collect())
+            .Combine(compilationProvider);
 
         context.RegisterSourceOutput(combined, static (spc, source) => 
-            GenerateMediatorCode(spc, source.Left.Left, source.Left.Right, source.Right));
+            GenerateMediatorCode(spc, source.Left.Left.Left, source.Left.Left.Right, source.Left.Right, source.Right));
+    }
+
+    // NEW: Framework detection method
+    private static bool IsFullFramework(Compilation compilation)
+    {
+        // Check if Microsoft.Extensions.DependencyInjection.IServiceCollection is available
+        var serviceCollectionType = compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.IServiceCollection");
+        
+        // If IServiceCollection is not available, we're likely on .NET Full Framework
+        return serviceCollectionType == null;
     }
 
     private static bool IsRequestClass(SyntaxNode node)
@@ -684,13 +697,17 @@ namespace CodeGenerator.Patterns.Mediator
         return null;
     }
 
-    // Update main generation method to handle legacy methods
+    // UPDATED: Main generation method to handle framework detection
     private static void GenerateMediatorCode(
         SourceProductionContext context, 
         ImmutableArray<RequestInfoResult?> requestResults, 
         ImmutableArray<HandlerInfoResult?> handlerResults,
-        ImmutableArray<LegacyMethodInfo?> legacyMethods)
+        ImmutableArray<LegacyMethodInfo?> legacyMethods,
+        Compilation compilation)
     {
+        // NEW: Detect framework
+        var isFullFramework = IsFullFramework(compilation);
+
         // Report diagnostics (existing code)
         foreach (var requestResult in requestResults.Where(r => r != null))
         {
@@ -760,13 +777,24 @@ namespace CodeGenerator.Patterns.Mediator
                 context.AddSource($"{legacyMethod.HandlerName}.Handler.g.cs", SourceText.From(handlerSource, Encoding.UTF8));
             }
 
-            // Generate extended mediator implementation
-            var mediatorSource = GenerateExtendedMediatorImplementation(validRequests, validHandlers, validLegacyMethods);
+            // NEW: Generate mediator implementation based on framework
+            string mediatorSource;
+            if (isFullFramework)
+            {
+                mediatorSource = GenerateFullFrameworkMediatorImplementation(validRequests, validHandlers, validLegacyMethods);
+            }
+            else
+            {
+                mediatorSource = GenerateExtendedMediatorImplementation(validRequests, validHandlers, validLegacyMethods);
+            }
             context.AddSource("GeneratedMediator.g.cs", SourceText.From(mediatorSource, Encoding.UTF8));
 
-            // Generate extended DI extensions
-            var diSource = GenerateExtendedDIExtensions(validHandlers, validLegacyMethods);
-            context.AddSource("MediatorDIExtensions.g.cs", SourceText.From(diSource, Encoding.UTF8));
+            // NEW: Only generate DI extensions for .NET Core/.NET 5+
+            if (!isFullFramework)
+            {
+                var diSource = GenerateExtendedDIExtensions(validHandlers, validLegacyMethods);
+                context.AddSource("MediatorDIExtensions.g.cs", SourceText.From(diSource, Encoding.UTF8));
+            }
         }
         catch (System.Exception ex)
         {
@@ -1122,7 +1150,7 @@ namespace CodeGenerator.Patterns.Mediator
         return sb.ToString();
     }
 
-    // Update mediator generation to support both patterns
+    // EXISTING: .NET Core/.NET 5+ mediator implementation
     private static string GenerateExtendedMediatorImplementation(
         List<RequestInfo> requests, 
         List<HandlerInfo> handlers, 
@@ -1175,6 +1203,101 @@ namespace CodeGenerator.Patterns.Mediator
         // NEW: Legacy MediatR-style methods
         GenerateLegacySendMethod(sb, legacyMethods);
         GenerateLegacySendWithResponseMethod(sb, legacyMethods);
+
+        sb.AppendLine("}");
+
+        return sb.ToString();
+    }
+
+    // NEW: .NET Full Framework mediator implementation
+    private static string GenerateFullFrameworkMediatorImplementation(
+        List<RequestInfo> requests, 
+        List<HandlerInfo> handlers, 
+        List<LegacyMethodInfo> legacyMethods)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("// <auto-generated />");
+        sb.AppendLine("#nullable enable");
+        sb.AppendLine("using CodeGenerator.Patterns.Mediator;");
+        sb.AppendLine("using System;");
+        sb.AppendLine("using System.Threading;");
+        sb.AppendLine("using System.Threading.Tasks;");
+        sb.AppendLine("using System.Collections.Generic;");
+        sb.AppendLine();
+
+        var allNamespaces = new List<string>();
+        allNamespaces.AddRange(handlers.Where(h => !string.IsNullOrEmpty(h.Namespace)).Select(h => h.Namespace));
+        allNamespaces.AddRange(legacyMethods.Where(m => !string.IsNullOrEmpty(m.Namespace)).Select(m => m.Namespace));
+        
+        var commonNamespace = allNamespaces
+            .GroupBy(ns => ns)
+            .OrderByDescending(g => g.Count())
+            .FirstOrDefault()?.Key ?? "";
+
+        if (!string.IsNullOrEmpty(commonNamespace))
+        {
+            sb.AppendLine($"namespace {commonNamespace};");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("public sealed class GeneratedMediator : IMediator");
+        sb.AppendLine("{");
+
+        // Generate private fields for each handler
+        var allHandlers = new List<(string FieldName, string TypeName)>();
+
+        foreach (var handler in handlers)
+        {
+            var handlerFullName = !string.IsNullOrEmpty(handler.Namespace)
+                ? $"{handler.Namespace}.{handler.HandlerName}"
+                : handler.HandlerName;
+            var fieldName = $"_{handler.HandlerName.Substring(0, 1).ToLower()}{handler.HandlerName.Substring(1)}";
+            
+            sb.AppendLine($"    private readonly {handlerFullName} {fieldName};");
+            allHandlers.Add((fieldName, handlerFullName));
+        }
+
+        foreach (var legacyMethod in legacyMethods)
+        {
+            var handlerFullName = !string.IsNullOrEmpty(legacyMethod.Namespace)
+                ? $"{legacyMethod.Namespace}.{legacyMethod.HandlerName}"
+                : legacyMethod.HandlerName;
+            var fieldName = $"_{legacyMethod.HandlerName.Substring(0, 1).ToLower()}{legacyMethod.HandlerName.Substring(1)}";
+            
+            sb.AppendLine($"    private readonly {handlerFullName} {fieldName};");
+            allHandlers.Add((fieldName, handlerFullName));
+        }
+
+        sb.AppendLine();
+
+        // Generate constructor with all handlers as parameters
+        sb.AppendLine("    public GeneratedMediator(");
+        var constructorParams = new List<string>();
+        foreach (var (fieldName, typeName) in allHandlers)
+        {
+            constructorParams.Add($"        {typeName} {fieldName.Substring(1)}");
+        }
+        sb.AppendLine(string.Join(",\n", constructorParams));
+        sb.AppendLine("    )");
+        sb.AppendLine("    {");
+
+        foreach (var (fieldName, _) in allHandlers)
+        {
+            sb.AppendLine($"        {fieldName} = {fieldName.Substring(1)};");
+        }
+
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Generate methods using direct handler references
+        GenerateFullFrameworkQuerySendMethod(sb, requests, handlers);
+        GenerateFullFrameworkCommandSendMethod(sb, requests, handlers);
+        GenerateFullFrameworkCommandWithResponseSendMethod(sb, requests, handlers);
+        GenerateFullFrameworkPublishMethod(sb, requests, handlers);
+        GenerateFullFrameworkCreateStreamMethod(sb, requests, handlers);
+        GenerateFullFrameworkLegacySendMethod(sb, legacyMethods);
+        GenerateFullFrameworkLegacySendWithResponseMethod(sb, legacyMethods);
 
         sb.AppendLine("}");
 
@@ -1367,6 +1490,181 @@ namespace CodeGenerator.Patterns.Mediator
                     : handler.HandlerName;
                     
                 sb.AppendLine($"            {request.Name} typedQuery => (IAsyncEnumerable<TResponse>)_serviceProvider.GetRequiredService<{handlerFullName}>().Handle(typedQuery, cancellationToken),");
+            }
+        }
+
+        sb.AppendLine("            _ => throw new InvalidOperationException($\"No handler registered for stream query type {query.GetType().Name}\")");
+        sb.AppendLine("        };");
+        sb.AppendLine("    }");
+    }
+
+    // NEW: Full Framework method implementations (using direct handler references)
+    private static void GenerateFullFrameworkQuerySendMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
+    {
+        sb.AppendLine("    public async Task<TResponse> Send<TResponse>(IQuery<TResponse> query, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        return query switch");
+        sb.AppendLine("        {");
+
+        var queryRequests = requests.Where(r => r.Type == RequestType.Query).ToList();
+        foreach (var request in queryRequests)
+        {
+            var handler = handlers.FirstOrDefault(h => h.RequestType == request.Name);
+            if (handler != null)
+            {
+                var fieldName = $"_{handler.HandlerName.Substring(0, 1).ToLower()}{handler.HandlerName.Substring(1)}";
+                sb.AppendLine($"            {request.Name} typedQuery => (TResponse)(object)await {fieldName}.Handle(typedQuery, cancellationToken),");
+            }
+        }
+
+        sb.AppendLine("            _ => throw new InvalidOperationException($\"No handler registered for query type {query.GetType().Name}\")");
+        sb.AppendLine("        };");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    private static void GenerateFullFrameworkCommandSendMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
+    {
+        sb.AppendLine("    public async Task Send(ICommand command, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        switch (command)");
+        sb.AppendLine("        {");
+
+        var commandRequests = requests.Where(r => r.Type == RequestType.Command && string.IsNullOrEmpty(r.ResponseType)).ToList();
+        foreach (var request in commandRequests)
+        {
+            var handler = handlers.FirstOrDefault(h => h.RequestType == request.Name);
+            if (handler != null)
+            {
+                var fieldName = $"_{handler.HandlerName.Substring(0, 1).ToLower()}{handler.HandlerName.Substring(1)}";
+                sb.AppendLine($"            case {request.Name} typedCommand:");
+                sb.AppendLine($"                await {fieldName}.Handle(typedCommand, cancellationToken);");
+                sb.AppendLine("                break;");
+            }
+        }
+
+        sb.AppendLine("            default:");
+        sb.AppendLine("                throw new InvalidOperationException($\"No handler registered for command type {command.GetType().Name}\");");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    private static void GenerateFullFrameworkCommandWithResponseSendMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
+    {
+        sb.AppendLine("    public async Task<TResponse> Send<TResponse>(ICommand<TResponse> command, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        return command switch");
+        sb.AppendLine("        {");
+
+        var commandRequests = requests.Where(r => r.Type == RequestType.Command && !string.IsNullOrEmpty(r.ResponseType)).ToList();
+        foreach (var request in commandRequests)
+        {
+            var handler = handlers.FirstOrDefault(h => h.RequestType == request.Name);
+            if (handler != null)
+            {
+                var fieldName = $"_{handler.HandlerName.Substring(0, 1).ToLower()}{handler.HandlerName.Substring(1)}";
+                sb.AppendLine($"            {request.Name} typedCommand => (TResponse)(object)await {fieldName}.Handle(typedCommand, cancellationToken),");
+            }
+        }
+
+        sb.AppendLine("            _ => throw new InvalidOperationException($\"No handler registered for command type {command.GetType().Name}\")");
+        sb.AppendLine("        };");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    private static void GenerateFullFrameworkLegacySendMethod(StringBuilder sb, List<LegacyMethodInfo> legacyMethods)
+    {
+        sb.AppendLine("    // Legacy MediatR-style Send method for IRequest");
+        sb.AppendLine("    public async Task Send(IRequest request, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        switch (request)");
+        sb.AppendLine("        {");
+
+        var voidMethods = legacyMethods.Where(m => !m.HasReturnType).ToList();
+        foreach (var method in voidMethods)
+        {
+            var fieldName = $"_{method.HandlerName.Substring(0, 1).ToLower()}{method.HandlerName.Substring(1)}";
+            sb.AppendLine($"            case {method.RequestName} typedRequest:");
+            sb.AppendLine($"                await {fieldName}.Handle(typedRequest, cancellationToken);");
+            sb.AppendLine("                break;");
+        }
+
+        sb.AppendLine("            default:");
+        sb.AppendLine("                throw new InvalidOperationException($\"No handler registered for request type {request.GetType().Name}\");");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    private static void GenerateFullFrameworkLegacySendWithResponseMethod(StringBuilder sb, List<LegacyMethodInfo> legacyMethods)
+    {
+        sb.AppendLine("    // Legacy MediatR-style Send method for IRequest<T>");
+        sb.AppendLine("    public async Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        return request switch");
+        sb.AppendLine("        {");
+
+        var responseMethods = legacyMethods.Where(m => m.HasReturnType).ToList();
+        foreach (var method in responseMethods)
+        {
+            var fieldName = $"_{method.HandlerName.Substring(0, 1).ToLower()}{method.HandlerName.Substring(1)}";
+            sb.AppendLine($"            {method.RequestName} typedRequest => (TResponse)(object)await {fieldName}.Handle(typedRequest, cancellationToken),");
+        }
+
+        sb.AppendLine("            _ => throw new InvalidOperationException($\"No handler registered for request type {request.GetType().Name}\")");
+        sb.AppendLine("        };");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    private static void GenerateFullFrameworkPublishMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
+    {
+        sb.AppendLine("    public async Task Publish<TEvent>(TEvent eventObj, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        var eventType = typeof(TEvent);");
+        sb.AppendLine("        var tasks = new List<Task>();");
+        sb.AppendLine();
+
+        var notificationHandlers = handlers.Where(h => h.Type == HandlerType.Notification).ToList();
+        
+        foreach (var handler in notificationHandlers)
+        {
+            var eventTypeFullName = handler.RequestType ?? "object";
+            var fieldName = $"_{handler.HandlerName.Substring(0, 1).ToLower()}{handler.HandlerName.Substring(1)}";
+            
+            sb.AppendLine($"        // Handler: {handler.HandlerName} for {eventTypeFullName}");
+            sb.AppendLine($"        if (typeof({eventTypeFullName}).IsAssignableFrom(eventType))");
+            sb.AppendLine("        {");
+            sb.AppendLine($"            tasks.Add({fieldName}.Handle(({eventTypeFullName})(object)eventObj!, cancellationToken));");
+            sb.AppendLine("        }");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("        if (tasks.Count > 0)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            await Task.WhenAll(tasks);");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+    }
+
+    private static void GenerateFullFrameworkCreateStreamMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
+    {
+        sb.AppendLine("    public IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamQuery<TResponse> query, CancellationToken cancellationToken = default)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        return query switch");
+        sb.AppendLine("        {");
+
+        var streamRequests = requests.Where(r => r.Type == RequestType.StreamQuery).ToList();
+        foreach (var request in streamRequests)
+        {
+            var handler = handlers.FirstOrDefault(h => h.RequestType == request.Name && h.Type == HandlerType.StreamQuery);
+            if (handler != null)
+            {
+                var fieldName = $"_{handler.HandlerName.Substring(0, 1).ToLower()}{handler.HandlerName.Substring(1)}";
+                sb.AppendLine($"            {request.Name} typedQuery => (IAsyncEnumerable<TResponse>){fieldName}.Handle(typedQuery, cancellationToken),");
             }
         }
 
