@@ -11,12 +11,12 @@ A C# source generator that creates thread-safe singleton implementations for .NE
 ## Quick Start
 1. Add the source generator to your project:
 ```bash
-<ItemGroup> <ProjectReference Include="path/to/CodeGenerator.DesignPatterns.Singleton.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
+<ItemGroup> <ProjectReference Include="path/to/Knara.SourceGenerators.DesignPatterns.Singleton.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
 ```
 
 Or via NuGet (when published):
 ```bash
-dotnet add package CodeGenerator.DesignPatterns.Singleton
+dotnet add package Knara.SourceGenerators.DesignPatterns.Singleton
 ```
 If you are using the generator in .net 4.+ projects, refer to [this guide](../dotnet-legacy-guide.md) for additional steps.
 
@@ -25,7 +25,7 @@ If you are using the generator in .net 4.+ projects, refer to [this guide](../do
 4. The generator creates the singleton implementation automatically
 
 ```csharp
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 [Singleton(Strategy = SingletonStrategy.Lazy)]
 public partial class ConfigurationManager
