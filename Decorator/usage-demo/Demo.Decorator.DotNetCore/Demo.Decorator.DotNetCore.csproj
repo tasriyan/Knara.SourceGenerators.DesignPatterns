@@ -9,6 +9,7 @@
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     <CompilerGeneratedFilesOutputPath>Generated\$(TargetFramework)</CompilerGeneratedFilesOutputPath>
     <RootNamespace>Demo.Decorator.DotNetCore</RootNamespace>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,14 +23,6 @@
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
       <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.8" />
-    </ItemGroup>
-  
-    <ItemGroup>
-      <Compile Remove="SampleServices\IDataRepository.cs" />
-    </ItemGroup>
-  
-    <ItemGroup>
-      <Compile Remove="SampleServices\IPaymentService.cs" />
     </ItemGroup>
   
     <ItemGroup>

@@ -12,12 +12,12 @@ A C# source generator that automatically creates fluent factory methods for the 
 ## Quick Start
 Add the source generator to your project:
 ```bash
-<ItemGroup> <ProjectReference Include="path/to/CodeGenerator.DesignPatterns.Decorator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
+<ItemGroup> <ProjectReference Include="path/to/Knara.SourceGenerators.DesignPatterns.Decorator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
 ```
 
 Or via NuGet (when published):
 ```bash
-dotnet add package CodeGenerator.DesignPatterns.Decorator
+dotnet add package Knara.SourceGenerators.DesignPatterns.Decorator
 ```
 If you are using the generator in .net 4.+ projects, refer to [this guide](../dotnet-legacy-guide.md) for additional steps.
 
