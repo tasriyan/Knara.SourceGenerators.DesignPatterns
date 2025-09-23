@@ -1,6 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 
-namespace Knara.SourceGenerators.DesignPatters.Builder;
+namespace Knara.SourceGenerators.DesignPatterns.Builder;
 
 public static class BuilderDiagnostics
 {

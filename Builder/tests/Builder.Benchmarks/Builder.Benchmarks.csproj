@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatters.Builder\Knara.SourceGenerators.DesignPatters.Builder.csproj" />
+      <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatterns.Builder\Knara.SourceGenerators.DesignPatterns.Builder.csproj" />
     </ItemGroup>
 
 </Project>

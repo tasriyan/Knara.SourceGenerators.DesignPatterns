@@ -1,4 +1,4 @@
-﻿using Knara.SourceGenerators.DesignPatters.Builder;
+﻿using Knara.SourceGenerators.DesignPatterns.Builder;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -49,7 +49,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder]
             public class Person
@@ -86,7 +86,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder]
             public class User
@@ -124,7 +124,7 @@ public class BuilderPatternGeneratorTests
         // Arrange
         var source = """
             using System.Collections.Generic;
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder]
             public class Order
@@ -159,7 +159,7 @@ public class BuilderPatternGeneratorTests
         // Arrange
         var source = """
             using System.Collections.Generic;
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder]
             public class Configuration
@@ -193,7 +193,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder(BuilderName = "CustomPersonBuilder")]
             public class Person
@@ -223,7 +223,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder(GenerateFromMethod = true)]
             public class Product
@@ -255,7 +255,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder(GenerateFromMethod = true)]
             public class Product
@@ -286,7 +286,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder]
             public class Person
@@ -317,7 +317,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder]
             public class Person
@@ -351,7 +351,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder(Accessibility = BuilderAccessibility.Internal)]
             public class Person
@@ -380,7 +380,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-            using Knara.SourceGenerators.DesignPatters.Builder;
+            using Knara.SourceGenerators.DesignPatterns.Builder;
 
             [GenerateBuilder]
             public class ImmutablePerson
@@ -441,7 +441,7 @@ public class BuilderPatternGeneratorTests
     {
         // Arrange
         var source = """
-                     using Knara.SourceGenerators.DesignPatters.Builder;
+                     using Knara.SourceGenerators.DesignPatterns.Builder;
 
                      [GenerateBuilder(ValidateOnBuild = false)]
                      public class Person

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Knara.SourceGenerators.DesignPatters.Builder;
+namespace Knara.SourceGenerators.DesignPatterns.Builder;
 
 public class TypeToGenerate
 {

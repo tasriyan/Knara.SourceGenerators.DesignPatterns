@@ -34,7 +34,7 @@
 
     <!-- Reference the generator project as an analyzer -->
     <ItemGroup>
-        <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatters.Builder\Knara.SourceGenerators.DesignPatters.Builder.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatterns.Builder\Knara.SourceGenerators.DesignPatterns.Builder.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <!-- Remove generated files from compilation so they don’t double-compile -->

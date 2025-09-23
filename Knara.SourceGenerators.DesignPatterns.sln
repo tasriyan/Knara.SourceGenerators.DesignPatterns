@@ -38,7 +38,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A00C449A
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Singleton.Benchmarks", "Singleton\tests\Singleton.Benchmarks\Singleton.Benchmarks.csproj", "{35FF2A72-0DAF-44AC-8F74-9B1C63CD9D0D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Knara.SourceGenerators.DesignPatters.Builder", "Builder\Knara.SourceGenerators.DesignPatters.Builder\Knara.SourceGenerators.DesignPatters.Builder.csproj", "{980338CB-DC12-F64E-C09E-D82F0063D417}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Knara.SourceGenerators.DesignPatterns.Builder", "Builder\Knara.SourceGenerators.DesignPatterns.Builder\Knara.SourceGenerators.DesignPatterns.Builder.csproj", "{980338CB-DC12-F64E-C09E-D82F0063D417}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mediator", "Mediator", "{44011200-7E39-4887-A9C8-54A12E8A190E}"
 	ProjectSection(SolutionItems) = preProject

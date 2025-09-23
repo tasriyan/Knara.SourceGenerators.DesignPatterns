@@ -1,4 +1,4 @@
-﻿using Knara.SourceGenerators.DesignPatters.Builder;
+﻿using Knara.SourceGenerators.DesignPatterns.Builder;
 
 namespace Demo.Builder.DotNetCore.SampleModels;
 

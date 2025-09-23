@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace Knara.SourceGenerators.DesignPatters.Builder;
+namespace Knara.SourceGenerators.DesignPatterns.Builder;
 
 // Helper classes for diagnostic collection
 public class TypeToGenerateResult
@@ -49,11 +49,11 @@ public class DiagnosticInfo
 [Generator]
 public class BuilderPatternGenerator : IIncrementalGenerator
 {
-    private const string NamespaceSource = "Knara.SourceGenerators.DesignPatters.Builder";
+    private const string NamespaceSource = "Knara.SourceGenerators.DesignPatterns.Builder";
     private const string AttributesSource = """
         using System;
 
-        namespace Knara.SourceGenerators.DesignPatters.Builder;
+        namespace Knara.SourceGenerators.DesignPatterns.Builder;
 
         [AttributeUsage(AttributeTargets.Class)]
         public class GenerateBuilderAttribute : Attribute
