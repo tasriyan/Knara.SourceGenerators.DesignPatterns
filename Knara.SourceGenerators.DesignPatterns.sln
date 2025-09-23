@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.14.36301.6
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Builder", "Builder", "{F1ACED7F-7D8E-442C-AAC9-068A64407E78}"
-	ProjectSection(SolutionItems) = preProject
-		Builder\README.md = Builder\README.md
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Builder.DotNetCore", "Builder\usage-demo\Demo.Builder.DotNetCore\Demo.Builder.DotNetCore.csproj", "{9DF5C120-CCEB-455C-9C0A-24090B8CC2FD}"
 EndProject
@@ -17,18 +14,12 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Builder.Benchmarks", "Builder\tests\Builder.Benchmarks\Builder.Benchmarks.csproj", "{30965533-C8FD-4DEE-B45E-9E13E9CD89F7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Decorator", "Decorator", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		Decorator\README.md = Decorator\README.md
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Knara.SourceGenerators.DesignPatterns.Decorator", "Decorator\Knara.SourceGenerators.DesignPatterns.Decorator\Knara.SourceGenerators.DesignPatterns.Decorator.csproj", "{A8063A82-DAC9-F17B-DB63-1B04D5274DF8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Demo.Decorator.DotNetCore", "Decorator\usage-demo\Demo.Decorator.DotNetCore\Demo.Decorator.DotNetCore.csproj", "{AB020ECE-ED13-6EB9-BB94-08F3D5D1C237}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Singleton", "Singleton", "{54C4B6B8-4E45-4CBF-B858-6C6A0505B463}"
-	ProjectSection(SolutionItems) = preProject
-		Singleton\README.md = Singleton\README.md
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Knara.SourceGenerators.DesignPatterns.Singleton", "Singleton\Knara.SourceGenerators.DesignPatterns.Singleton\Knara.SourceGenerators.DesignPatterns.Singleton.csproj", "{9A69C47D-4D65-40B4-BF0E-2CAB7EB50E51}"
 EndProject
@@ -41,9 +32,6 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Knara.SourceGenerators.DesignPatterns.Builder", "Builder\Knara.SourceGenerators.DesignPatterns.Builder\Knara.SourceGenerators.DesignPatterns.Builder.csproj", "{980338CB-DC12-F64E-C09E-D82F0063D417}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Mediator", "Mediator", "{44011200-7E39-4887-A9C8-54A12E8A190E}"
-	ProjectSection(SolutionItems) = preProject
-		Mediator\README.md = Mediator\README.md
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Knara.SourceGenerators.DesignPatterns.Mediator", "Mediator\Knara.SourceGenerators.DesignPatterns.Mediator\Knara.SourceGenerators.DesignPatterns.Mediator.csproj", "{CC84C4CE-5649-4468-8ED6-C6DAD589EE9D}"
 EndProject
