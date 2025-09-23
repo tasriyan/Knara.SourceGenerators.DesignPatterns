@@ -44,12 +44,12 @@ Both generate the same mediator infrastructure but serve different migration str
 ## Quick Start
 Add the source generator to your project:
 ```bash
-<ItemGroup> <ProjectReference Include="path/to/CodeGenerator.DesignPatterns.Mediator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
+<ItemGroup> <ProjectReference Include="path/to/Knara.SourceGenerators.DesignPatterns.Mediator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
 ```
 
 Or via NuGet (when published):
 ```bash
-dotnet add package CodeGenerator.DesignPatterns.Mediator
+dotnet add package Knara.SourceGenerators.DesignPatterns.Mediator
 ```
 If you are using the generator in .net 4.+ projects, refer to [this guide](../dotnet-legacy-guide.md) for additional steps.
 
