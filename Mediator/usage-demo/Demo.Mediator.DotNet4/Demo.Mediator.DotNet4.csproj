@@ -33,14 +33,12 @@
 
     <!-- Reference the generator project as an analyzer -->
     <ItemGroup>
-        <ProjectReference Include="..\..\CodeGenerator.Patterns.Mediator\CodeGenerator.Patterns.Mediator.csproj"
-                          OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="..\..\CodeGenerator.Patterns.Mediator\CodeGenerator.Patterns.Mediator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <!-- Remove generated files from compilation so they don’t double-compile -->
     <ItemGroup>
         <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
-        <Folder Include="Generated\**" />
         <Folder Include="Properties\" />
     </ItemGroup>
     <ItemGroup>

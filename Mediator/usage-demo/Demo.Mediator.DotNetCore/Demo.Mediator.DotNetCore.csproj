@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs"></Compile>
-    <Folder Include="Generated\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,8 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CodeGenerator.Patterns.Mediator\CodeGenerator.Patterns.Mediator.csproj" 
-                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\CodeGenerator.Patterns.Mediator\CodeGenerator.Patterns.Mediator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs"></Compile>
-    <Folder Include="Generated\**" />
   </ItemGroup>
 
 
@@ -23,8 +22,7 @@
 
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CodeGenerator.Patterns.Singleton\CodeGenerator.Patterns.Singleton.csproj" 
-      OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+    <ProjectReference Include="..\..\CodeGenerator.Patterns.Singleton\CodeGenerator.Patterns.Singleton.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

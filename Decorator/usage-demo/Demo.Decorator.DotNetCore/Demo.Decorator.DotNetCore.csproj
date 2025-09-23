@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <Compile Remove="$(CompilerGeneratedFilesOutputPath)/**/*.cs"></Compile>
-    <Folder Include="Generated\**" />
   </ItemGroup>
 
 
@@ -34,8 +33,7 @@
     </ItemGroup>
   
     <ItemGroup>
-      <ProjectReference Include="..\..\CodeGenerator.Patterns.Decorator\CodeGenerator.Patterns.Decorator.csproj" 
-        OutputItemType="Analyzer" ReferenceOutputAssembly="false"/>
+      <ProjectReference Include="..\..\CodeGenerator.Patterns.Decorator\CodeGenerator.Patterns.Decorator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
 </Project>
