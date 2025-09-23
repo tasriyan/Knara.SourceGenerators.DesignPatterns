@@ -8,6 +8,7 @@
         <IsRoslynComponent>true</IsRoslynComponent>
         <IsPackable>true</IsPackable>
         <Description>A source generator that automatically creates fluent factory methods for the Decorator design pattern.</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     
   <ItemGroup>
@@ -17,5 +18,8 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
   </ItemGroup>
-  
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
 </Project>

@@ -7,8 +7,8 @@
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
         <IsPackable>true</IsPackable>
-        <Description>A source generator that automatically generates type-safe builders with validation, required field checking, and collection handling.
-        </Description>
+        <Description>A source generator that automatically generates type-safe builders with validation, required field checking, and collection handling.</Description>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,4 +18,9 @@
         </PackageReference>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     </ItemGroup>
+
+    <ItemGroup>
+        <None Include="README.md" Pack="true" PackagePath="\" />
+    </ItemGroup>
+    
 </Project>

@@ -1,0 +1,78 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
+      - '**/*.sln'
+      - '**/*.config'
+      - '**/Directory.Build.props'
+      - '**/Directory.Build.targets'
+      - 'global.json'
+      - 'nuget.config'
+      - '.github/workflows/build.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '**/*.cs'
+      - '**/*.csproj'
+      - '**/*.sln'
+      - '**/*.config'
+      - '**/Directory.Build.props'
+      - '**/Directory.Build.targets'
+      - 'global.json'
+      - 'nuget.config'
+      - '.github/workflows/build.yml'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual build'
+        required: false
+        default: 'Manual trigger'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore Builder/Knara.SourceGenerators.DesignPatterns.Builder/Knara.SourceGenerators.DesignPatterns.Builder.csproj
+          dotnet restore Builder/tests/Builder.UnitTests/Builder.UnitTests.csproj
+          
+          dotnet restore Decorator/Knara.SourceGenerators.DesignPatterns.Decorator/Knara.SourceGenerators.DesignPatterns.Decorator.csproj
+          
+          dotnet restore Mediator/Knara.SourceGenerators.DesignPatterns.Mediator/Knara.SourceGenerators.DesignPatterns.Mediator.csproj
+          dotnet restore Mediator/tests/Mediator.UnitTests/Mediator.UnitTests.csproj
+          
+          dotnet restore Singleton/Knara.SourceGenerators.DesignPatterns.Singleton/Knara.SourceGenerators.DesignPatterns.Singleton.csproj
+          dotnet restore Singleton/tests/Singleton.UnitTests/Singleton.UnitTests.csproj
+
+      - name: Build
+        run: |
+          dotnet build Builder/Knara.SourceGenerators.DesignPatterns.Builder/Knara.SourceGenerators.DesignPatterns.Builder.csproj --configuration Release --no-restore
+          dotnet build Decorator/Knara.SourceGenerators.DesignPatterns.Decorator/Knara.SourceGenerators.DesignPatterns.Decorator.csproj --configuration Release --no-restore
+          dotnet build Mediator/Knara.SourceGenerators.DesignPatterns.Mediator/Knara.SourceGenerators.DesignPatterns.Mediator.csproj --configuration Release --no-restore
+          dotnet build Singleton/Knara.SourceGenerators.DesignPatterns.Singleton/Knara.SourceGenerators.DesignPatterns.Singleton.csproj --configuration Release --no-restore
+
+          dotnet build Builder/tests/Builder.UnitTests/Builder.UnitTests.csproj --configuration Release --no-restore
+          dotnet build Mediator/tests/Mediator.UnitTests/Mediator.UnitTests.csproj --configuration Release --no-restore
+          dotnet build Singleton/tests/Singleton.UnitTests/Singleton.UnitTests.csproj --configuration Release --no-restore
+
+      - name: Test
+        run: |
+          dotnet test Builder/tests/Builder.UnitTests/Builder.UnitTests.csproj --configuration Release --no-build --verbosity normal
+          dotnet test Mediator/tests/Mediator.UnitTests/Mediator.UnitTests.csproj --configuration Release --no-build --verbosity normal
+          dotnet test Singleton/tests/Singleton.UnitTests/Singleton.UnitTests.csproj --configuration Release --no-build --verbosity normal
