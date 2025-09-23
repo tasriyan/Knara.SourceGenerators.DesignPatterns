@@ -8,12 +8,7 @@
         <IsRoslynComponent>true</IsRoslynComponent>
         <IsPackable>true</IsPackable>
         <Description>A source generator that automatically generates type-safe builders with validation, required field checking, and collection handling.</Description>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="../README.md" Pack="true" PackagePath="README.md" />
-  </ItemGroup>
   
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="4.14.0">

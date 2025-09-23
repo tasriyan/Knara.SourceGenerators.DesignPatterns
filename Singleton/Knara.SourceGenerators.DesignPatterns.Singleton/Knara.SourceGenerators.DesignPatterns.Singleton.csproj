@@ -8,7 +8,6 @@
         <IsRoslynComponent>true</IsRoslynComponent>
         <IsPackable>true</IsPackable>
         <Description>A source generator that creates thread-safe singleton implementations for .NET Framework applications.</Description>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,9 +17,5 @@
         </PackageReference>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     </ItemGroup>
-
-  <ItemGroup>
-    <None Include="../README.md" Pack="true" PackagePath="README.md" />
-  </ItemGroup>
     
 </Project>
