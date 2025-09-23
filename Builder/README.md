@@ -13,17 +13,17 @@ A C# source generator that creates fluent builder classes for complex object con
 ## Quick Start
 Add the source generator to your project:
 ```bash
-<ItemGroup> <ProjectReference Include="path/to/CodeGenerator.DesignPatterns.Builder.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
+<ItemGroup> <ProjectReference Include="path/to/Knara.SourceGenerators.DesignPatterns.Builder.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" /> </ItemGroup>
 ```
 
 Or via NuGet (when published):
 ```bash
-dotnet add package CodeGenerator.DesignPatterns.Builder
+dotnet add package Knara.SourceGenerators.DesignPatterns.Builder
 ```
 If you are using the generator in .net 4.+ projects, refer to [this guide](../dotnet-legacy-guide.md) for additional steps.
 
 ```csharp
-using CodeGenerator.Patterns.Builder;
+using Knara.SourceGenerators.DesignPatterns.Builder;
 
 [GenerateBuilder]
 public class User

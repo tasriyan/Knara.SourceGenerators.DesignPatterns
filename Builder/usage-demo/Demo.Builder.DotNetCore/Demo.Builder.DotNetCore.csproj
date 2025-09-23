@@ -8,6 +8,7 @@
         <Nullable>enable</Nullable>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>Generated\$(TargetFramework)</CompilerGeneratedFilesOutputPath>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
