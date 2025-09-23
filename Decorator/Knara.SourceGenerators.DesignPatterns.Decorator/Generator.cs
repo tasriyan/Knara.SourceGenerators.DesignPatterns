@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace CodeGenerator.Patterns.Decorator;
+namespace Knara.SourceGenerators.DesignPatterns.Decorator;
 
 public class InterfaceInfo
 {
@@ -86,7 +86,7 @@ public class DecoratorFactoryGenerator : IIncrementalGenerator
     private const string GenerateDecoratorFactoryAttribute = @"
 using System;
 
-namespace CodeGenerator.Patterns.Decorator
+namespace Knara.SourceGenerators.DesignPatterns.Decorator
 {
     [AttributeUsage(AttributeTargets.Interface)]
     public class GenerateDecoratorFactoryAttribute : Attribute
@@ -99,7 +99,7 @@ namespace CodeGenerator.Patterns.Decorator
     private const string DecoratorAttribute = @"
 using System;
 
-namespace CodeGenerator.Patterns.Decorator
+namespace Knara.SourceGenerators.DesignPatterns.Decorator
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class DecoratorAttribute : Attribute

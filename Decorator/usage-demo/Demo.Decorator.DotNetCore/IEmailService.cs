@@ -1,4 +1,4 @@
-﻿using CodeGenerator.Patterns.Decorator;
+﻿using Knara.SourceGenerators.DesignPatterns.Decorator;
 using Microsoft.Extensions.Logging;
 
 namespace Demo.Decorator.DotNetCore;

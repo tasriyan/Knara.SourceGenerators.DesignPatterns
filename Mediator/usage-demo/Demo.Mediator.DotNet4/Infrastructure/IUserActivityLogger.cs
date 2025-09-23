@@ -1,4 +1,4 @@
-﻿using CodeGenerator.Patterns.Mediator;
+﻿using Knara.SourceGenerators.DesignPatterns.Mediator;
 using Demo.Mediator.DotNet4.Core;
 
 namespace Demo.Mediator.DotNet4.Infrastructure

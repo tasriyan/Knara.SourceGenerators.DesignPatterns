@@ -1,4 +1,4 @@
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Shouldly;
@@ -17,7 +17,8 @@ public class DeclarativeMediatorGeneratorTests
             MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(System.Threading.Tasks.Task).Assembly.Location),
             MetadataReference.CreateFromFile(typeof(System.Collections.Generic.IAsyncEnumerable<>).Assembly.Location),
-            MetadataReference.CreateFromFile(typeof(System.Runtime.CompilerServices.EnumeratorCancellationAttribute).Assembly.Location)
+            MetadataReference.CreateFromFile(typeof(System.Runtime.CompilerServices.EnumeratorCancellationAttribute).Assembly.Location),
+            MetadataReference.CreateFromFile(typeof(Microsoft.Extensions.DependencyInjection.IServiceCollection).Assembly.Location)
         };
 
         return CSharpCompilation.Create(
@@ -56,7 +57,7 @@ public class DeclarativeMediatorGeneratorTests
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -96,7 +97,7 @@ namespace TestNamespace
         generatedSources.ShouldContain(s => s.HintName == "GeneratedMediator.g.cs");
 
         var requestSource = generatedSources.First(s => s.HintName == "GetUserQuery.Request.g.cs").SourceText.ToString();
-        requestSource.ShouldContain("public class GetUserQuery : CodeGenerator.Patterns.Mediator.IQuery<string>");
+        requestSource.ShouldContain("public class GetUserQuery : Knara.SourceGenerators.DesignPatterns.Mediator.IQuery<string>");
         requestSource.ShouldContain("public int UserId { get; set; }");
         requestSource.ShouldContain("public string Name { get; set; } = \"\";");
     }
@@ -106,7 +107,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -140,7 +141,7 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var requestSource = generatedSources.First(s => s.HintName == "CreateUser.Request.g.cs").SourceText.ToString();
         
-        requestSource.ShouldContain("public class CreateUser : CodeGenerator.Patterns.Mediator.ICommand");
+        requestSource.ShouldContain("public class CreateUser : Knara.SourceGenerators.DesignPatterns.Mediator.ICommand");
         requestSource.ShouldContain("public string Name { get; set; } = \"\";");
         requestSource.ShouldContain("public int Age { get; set; }");
     }
@@ -150,7 +151,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -184,7 +185,7 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var requestSource = generatedSources.First(s => s.HintName == "CreateUser.Request.g.cs").SourceText.ToString();
         
-        requestSource.ShouldContain("public class CreateUser : CodeGenerator.Patterns.Mediator.ICommand<int>");
+        requestSource.ShouldContain("public class CreateUser : Knara.SourceGenerators.DesignPatterns.Mediator.ICommand<int>");
     }
 
     [Fact]
@@ -192,7 +193,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -227,7 +228,7 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var requestSource = generatedSources.First(s => s.HintName == "GetUsers.Request.g.cs").SourceText.ToString();
         
-        requestSource.ShouldContain("public class GetUsers : CodeGenerator.Patterns.Mediator.IStreamQuery<string>");
+        requestSource.ShouldContain("public class GetUsers : Knara.SourceGenerators.DesignPatterns.Mediator.IStreamQuery<string>");
     }
 
     [Fact]
@@ -235,7 +236,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -266,7 +267,7 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var requestSource = generatedSources.First(s => s.HintName == "GetUser.Request.g.cs").SourceText.ToString();
         
-        requestSource.ShouldContain("public class GetUser : CodeGenerator.Patterns.Mediator.IQuery<string>");
+        requestSource.ShouldContain("public class GetUser : Knara.SourceGenerators.DesignPatterns.Mediator.IQuery<string>");
         requestSource.ShouldContain("public int UserId { get; set; }");
         requestSource.ShouldContain("public string Name { get; set; } = \"\";");
     }
@@ -276,7 +277,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -317,7 +318,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -358,7 +359,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -386,14 +387,14 @@ namespace TestNamespace
         var generatedSources = runResult.Results[0].GeneratedSources;
         var mediatorSource = generatedSources.First(s => s.HintName == "GeneratedMediator.g.cs").SourceText.ToString();
         
-        mediatorSource.ShouldContain("public sealed class GeneratedMediator : CodeGenerator.Patterns.Mediator.IMediator");
-        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.IQuery<TResponse>");
-        mediatorSource.ShouldContain("Task Send(CodeGenerator.Patterns.Mediator.ICommand command");
-        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.ICommand<TResponse>");
+        mediatorSource.ShouldContain("public sealed class GeneratedMediator : Knara.SourceGenerators.DesignPatterns.Mediator.IMediator");
+        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.IQuery<TResponse>");
+        mediatorSource.ShouldContain("Task Send(Knara.SourceGenerators.DesignPatterns.Mediator.ICommand command");
+        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.ICommand<TResponse>");
         mediatorSource.ShouldContain("Task Publish<TEvent>");
         mediatorSource.ShouldContain("IAsyncEnumerable<TResponse> CreateStream<TResponse>");
-        mediatorSource.ShouldContain("Task Send(CodeGenerator.Patterns.Mediator.IRequest request"); // Legacy support
-        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.IRequest<TResponse>"); // Legacy support
+        mediatorSource.ShouldContain("Task Send(Knara.SourceGenerators.DesignPatterns.Mediator.IRequest request"); // Legacy support
+        mediatorSource.ShouldContain("Task<TResponse> Send<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.IRequest<TResponse>"); // Legacy support
     }
 
     [Fact]
@@ -401,7 +402,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -427,11 +428,11 @@ namespace TestNamespace
 
         // Assert
         var generatedSources = runResult.Results[0].GeneratedSources;
-        var diSource = generatedSources.First(s => s.HintName == "MediatorDIExtensions.g.cs").SourceText.ToString();
+        var diSource = generatedSources.First(s => s.HintName.Contains("MediatorDIExtensions.g.cs")).SourceText.ToString();
         
         diSource.ShouldContain("AddDeclarativeMediator");
         diSource.ShouldContain("AddScoped<TestNamespace.UserService>");
-        diSource.ShouldContain("AddSingleton<IMediator, GeneratedMediator>");
+        diSource.ShouldContain("AddSingleton<Knara.SourceGenerators.DesignPatterns.Mediator.IMediator, GeneratedMediator>");
     }
 
     [Theory]
@@ -444,7 +445,7 @@ namespace TestNamespace
     {
         // Arrange
         var source = $@"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using System;
 using System.Collections.Generic;
 
@@ -477,7 +478,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 
 namespace TestNamespace
 {
@@ -506,7 +507,7 @@ namespace TestNamespace
     {
         // Arrange
         const string source = @"
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 
 namespace TestNamespace
 {

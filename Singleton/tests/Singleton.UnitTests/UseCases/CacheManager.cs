@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace Singleton.UnitTests.UseCases;
 

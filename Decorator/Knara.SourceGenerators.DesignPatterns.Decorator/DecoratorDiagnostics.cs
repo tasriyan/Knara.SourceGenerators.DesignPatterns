@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace CodeGenerator.Patterns.Decorator;
+namespace Knara.SourceGenerators.DesignPatterns.Decorator;
 
 public static class DecoratorDiagnostics
 {

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace CodeGenerator.Patterns.Singleton;
+namespace Knara.SourceGenerators.DesignPatterns.Singleton;
 
 public enum SingletonStrategy
 {

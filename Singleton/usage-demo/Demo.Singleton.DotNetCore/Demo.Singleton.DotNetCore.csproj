@@ -22,7 +22,7 @@
 
 
   <ItemGroup>
-    <ProjectReference Include="..\..\CodeGenerator.Patterns.Singleton\CodeGenerator.Patterns.Singleton.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatterns.Singleton\Knara.SourceGenerators.DesignPatterns.Singleton.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

@@ -8,7 +8,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 
-namespace CodeGenerator.Patterns.Mediator;
+namespace Knara.SourceGenerators.DesignPatterns.Mediator;
 
 [Generator]
 public class DeclarativeMediatorGenerator : IIncrementalGenerator
@@ -19,7 +19,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 
-namespace CodeGenerator.Patterns.Mediator
+namespace Knara.SourceGenerators.DesignPatterns.Mediator
 {
     // CQRS-style Request pattern attributes (EXISTING)
     [AttributeUsage(AttributeTargets.Class)]
@@ -928,10 +928,10 @@ namespace CodeGenerator.Patterns.Mediator
         // ALWAYS generate a CLASS (not record) that implements the mediator interface with FULLY QUALIFIED NAMES
         var interfaceName = request.Type switch
         {
-            RequestType.Query => $"CodeGenerator.Patterns.Mediator.IQuery<{request.ResponseType ?? "object"}>",
-            RequestType.Command when !string.IsNullOrEmpty(request.ResponseType) => $"CodeGenerator.Patterns.Mediator.ICommand<{request.ResponseType}>",
-            RequestType.Command => "CodeGenerator.Patterns.Mediator.ICommand",
-            RequestType.StreamQuery => $"CodeGenerator.Patterns.Mediator.IStreamQuery<{request.ResponseType ?? "object"}>",
+            RequestType.Query => $"Knara.SourceGenerators.DesignPatterns.Mediator.IQuery<{request.ResponseType ?? "object"}>",
+            RequestType.Command when !string.IsNullOrEmpty(request.ResponseType) => $"Knara.SourceGenerators.DesignPatterns.Mediator.ICommand<{request.ResponseType}>",
+            RequestType.Command => "Knara.SourceGenerators.DesignPatterns.Mediator.ICommand",
+            RequestType.StreamQuery => $"Knara.SourceGenerators.DesignPatterns.Mediator.IStreamQuery<{request.ResponseType ?? "object"}>",
             _ => "object"
         };
 
@@ -967,8 +967,8 @@ namespace CodeGenerator.Patterns.Mediator
 
         // Determine interface to implement with FULLY QUALIFIED NAMES
         var interfaceName = method.HasReturnType 
-            ? $"CodeGenerator.Patterns.Mediator.IRequest<{method.ReturnType ?? "object"}>"
-            : "CodeGenerator.Patterns.Mediator.IRequest";
+            ? $"Knara.SourceGenerators.DesignPatterns.Mediator.IRequest<{method.ReturnType ?? "object"}>"
+            : "Knara.SourceGenerators.DesignPatterns.Mediator.IRequest";
 
         sb.AppendLine($"// Generated from method {method.ServiceClassName}.{method.MethodName}");
         sb.AppendLine($"public class {method.RequestName} : {interfaceName}");
@@ -1025,10 +1025,10 @@ namespace CodeGenerator.Patterns.Mediator
 
         var interfaceName = handler.Type switch
         {
-            HandlerType.Query => $"CodeGenerator.Patterns.Mediator.IQueryHandler<{requestFullName}, {request.ResponseType ?? "object"}>",
-            HandlerType.Command when !string.IsNullOrEmpty(request.ResponseType) => $"CodeGenerator.Patterns.Mediator.ICommandHandler<{requestFullName}, {request.ResponseType}>",
-            HandlerType.Command => $"CodeGenerator.Patterns.Mediator.ICommandHandler<{requestFullName}>",
-            HandlerType.StreamQuery => $"CodeGenerator.Patterns.Mediator.IStreamQueryHandler<{requestFullName}, {request.ResponseType ?? "object"}>",
+            HandlerType.Query => $"Knara.SourceGenerators.DesignPatterns.Mediator.IQueryHandler<{requestFullName}, {request.ResponseType ?? "object"}>",
+            HandlerType.Command when !string.IsNullOrEmpty(request.ResponseType) => $"Knara.SourceGenerators.DesignPatterns.Mediator.ICommandHandler<{requestFullName}, {request.ResponseType}>",
+            HandlerType.Command => $"Knara.SourceGenerators.DesignPatterns.Mediator.ICommandHandler<{requestFullName}>",
+            HandlerType.StreamQuery => $"Knara.SourceGenerators.DesignPatterns.Mediator.IStreamQueryHandler<{requestFullName}, {request.ResponseType ?? "object"}>",
             _ => "object"
         };
 
@@ -1176,8 +1176,8 @@ namespace CodeGenerator.Patterns.Mediator
             : method.RequestName;
 
         var handlerInterface = method.HasReturnType
-            ? $"CodeGenerator.Patterns.Mediator.IRequestHandler<{requestFullName}, {method.ReturnType ?? "object"}>"
-            : $"CodeGenerator.Patterns.Mediator.IRequestHandler<{requestFullName}>";
+            ? $"Knara.SourceGenerators.DesignPatterns.Mediator.IRequestHandler<{requestFullName}, {method.ReturnType ?? "object"}>"
+            : $"Knara.SourceGenerators.DesignPatterns.Mediator.IRequestHandler<{requestFullName}>";
 
         var serviceFullName = !string.IsNullOrEmpty(method.Namespace) 
             ? $"{method.Namespace}.{method.ServiceClassName}"
@@ -1310,7 +1310,7 @@ namespace CodeGenerator.Patterns.Mediator
             sb.AppendLine();
         }
 
-        sb.AppendLine("public sealed class GeneratedMediator : CodeGenerator.Patterns.Mediator.IMediator");
+        sb.AppendLine("public sealed class GeneratedMediator : Knara.SourceGenerators.DesignPatterns.Mediator.IMediator");
         sb.AppendLine("{");
         sb.AppendLine("    private readonly System.IServiceProvider _serviceProvider;");
         sb.AppendLine();
@@ -1367,7 +1367,7 @@ namespace CodeGenerator.Patterns.Mediator
             sb.AppendLine();
         }
 
-        sb.AppendLine("public sealed class GeneratedMediator : CodeGenerator.Patterns.Mediator.IMediator");
+        sb.AppendLine("public sealed class GeneratedMediator : Knara.SourceGenerators.DesignPatterns.Mediator.IMediator");
         sb.AppendLine("{");
 
         // Collect all handlers and sort them alphabetically by class name
@@ -1439,7 +1439,7 @@ namespace CodeGenerator.Patterns.Mediator
 
     private static void GenerateQuerySendMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
-        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.IQuery<TResponse> query, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.IQuery<TResponse> query, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        return query switch");
         sb.AppendLine("        {");
@@ -1470,7 +1470,7 @@ namespace CodeGenerator.Patterns.Mediator
 
     private static void GenerateCommandSendMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
-        sb.AppendLine("    public async System.Threading.Tasks.Task Send(CodeGenerator.Patterns.Mediator.ICommand command, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task Send(Knara.SourceGenerators.DesignPatterns.Mediator.ICommand command, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        switch (command)");
         sb.AppendLine("        {");
@@ -1504,7 +1504,7 @@ namespace CodeGenerator.Patterns.Mediator
 
     private static void GenerateCommandWithResponseSendMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
-        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.ICommand<TResponse> command, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.ICommand<TResponse> command, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        return command switch");
         sb.AppendLine("        {");
@@ -1537,7 +1537,7 @@ namespace CodeGenerator.Patterns.Mediator
     private static void GenerateLegacySendMethod(StringBuilder sb, List<LegacyMethodInfo> legacyMethods)
     {
         sb.AppendLine("    // Legacy MediatR-style Send method for IRequest");
-        sb.AppendLine("    public async System.Threading.Tasks.Task Send(CodeGenerator.Patterns.Mediator.IRequest request, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task Send(Knara.SourceGenerators.DesignPatterns.Mediator.IRequest request, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        switch (request)");
         sb.AppendLine("        {");
@@ -1569,7 +1569,7 @@ namespace CodeGenerator.Patterns.Mediator
     private static void GenerateLegacySendWithResponseMethod(StringBuilder sb, List<LegacyMethodInfo> legacyMethods)
     {
         sb.AppendLine("    // Legacy MediatR-style Send method for IRequest<T>");
-        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.IRequest<TResponse> request, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.IRequest<TResponse> request, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        return request switch");
         sb.AppendLine("        {");
@@ -1629,7 +1629,7 @@ namespace CodeGenerator.Patterns.Mediator
     private static void GenerateCreateStreamMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
         sb.AppendLine();
-        sb.AppendLine("    public System.Collections.Generic.IAsyncEnumerable<TResponse> CreateStream<TResponse>(CodeGenerator.Patterns.Mediator.IStreamQuery<TResponse> query, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public System.Collections.Generic.IAsyncEnumerable<TResponse> CreateStream<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.IStreamQuery<TResponse> query, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        return query switch");
         sb.AppendLine("        {");
@@ -1660,7 +1660,7 @@ namespace CodeGenerator.Patterns.Mediator
     // NEW: Full Framework method implementations (using direct handler references)
     private static void GenerateFullFrameworkQuerySendMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
-        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.IQuery<TResponse> query, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.IQuery<TResponse> query, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        return query switch");
         sb.AppendLine("        {");
@@ -1688,7 +1688,7 @@ namespace CodeGenerator.Patterns.Mediator
 
     private static void GenerateFullFrameworkCommandSendMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
-        sb.AppendLine("    public async System.Threading.Tasks.Task Send(CodeGenerator.Patterns.Mediator.ICommand command, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task Send(Knara.SourceGenerators.DesignPatterns.Mediator.ICommand command, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        switch (command)");
         sb.AppendLine("        {");
@@ -1719,7 +1719,7 @@ namespace CodeGenerator.Patterns.Mediator
 
     private static void GenerateFullFrameworkCommandWithResponseSendMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
-        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.ICommand<TResponse> command, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.ICommand<TResponse> command, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        return command switch");
         sb.AppendLine("        {");
@@ -1748,7 +1748,7 @@ namespace CodeGenerator.Patterns.Mediator
     private static void GenerateFullFrameworkLegacySendMethod(StringBuilder sb, List<LegacyMethodInfo> legacyMethods)
     {
         sb.AppendLine("    // Legacy MediatR-style Send method for IRequest");
-        sb.AppendLine("    public async System.Threading.Tasks.Task Send(CodeGenerator.Patterns.Mediator.IRequest request, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task Send(Knara.SourceGenerators.DesignPatterns.Mediator.IRequest request, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        switch (request)");
         sb.AppendLine("        {");
@@ -1776,7 +1776,7 @@ namespace CodeGenerator.Patterns.Mediator
     private static void GenerateFullFrameworkLegacySendWithResponseMethod(StringBuilder sb, List<LegacyMethodInfo> legacyMethods)
     {
         sb.AppendLine("    // Legacy MediatR-style Send method for IRequest<T>");
-        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(CodeGenerator.Patterns.Mediator.IRequest<TResponse> request, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public async System.Threading.Tasks.Task<TResponse> Send<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.IRequest<TResponse> request, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        return request switch");
         sb.AppendLine("        {");
@@ -1831,7 +1831,7 @@ namespace CodeGenerator.Patterns.Mediator
 
     private static void GenerateFullFrameworkCreateStreamMethod(StringBuilder sb, List<RequestInfo> requests, List<HandlerInfo> handlers)
     {
-        sb.AppendLine("    public System.Collections.Generic.IAsyncEnumerable<TResponse> CreateStream<TResponse>(CodeGenerator.Patterns.Mediator.IStreamQuery<TResponse> query, System.Threading.CancellationToken cancellationToken = default)");
+        sb.AppendLine("    public System.Collections.Generic.IAsyncEnumerable<TResponse> CreateStream<TResponse>(Knara.SourceGenerators.DesignPatterns.Mediator.IStreamQuery<TResponse> query, System.Threading.CancellationToken cancellationToken = default)");
         sb.AppendLine("    {");
         sb.AppendLine("        return query switch");
         sb.AppendLine("        {");
@@ -1925,7 +1925,7 @@ namespace CodeGenerator.Patterns.Mediator
         }
 
         sb.AppendLine();
-        sb.AppendLine("        Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<CodeGenerator.Patterns.Mediator.IMediator, GeneratedMediator>(services);");
+        sb.AppendLine("        Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton<Knara.SourceGenerators.DesignPatterns.Mediator.IMediator, GeneratedMediator>(services);");
         sb.AppendLine("        return services;");
         sb.AppendLine("    }");
         sb.AppendLine("}");

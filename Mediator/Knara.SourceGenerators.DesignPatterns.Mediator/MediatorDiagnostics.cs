@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace CodeGenerator.Patterns.Mediator;
+namespace Knara.SourceGenerators.DesignPatterns.Mediator;
 
 public static class MediatorDiagnostics
 {

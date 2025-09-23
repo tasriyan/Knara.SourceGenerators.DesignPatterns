@@ -1,4 +1,4 @@
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -36,7 +36,7 @@ public class SingletonPatternGeneratorTests
     public void GeneratesSingletonForValidPartialClass()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -65,7 +65,7 @@ namespace TestNamespace
     public void ReportsErrorForNonPartialClass()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -87,7 +87,7 @@ namespace TestNamespace
     public void ReportsWarningForPublicConstructor()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -109,7 +109,7 @@ namespace TestNamespace
     public void GeneratesEagerSingleton()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -133,7 +133,7 @@ namespace TestNamespace
     public void GeneratesLockFreeSingleton()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -157,7 +157,7 @@ namespace TestNamespace
     public void GeneratesDoubleCheckedLockingSingleton()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -182,7 +182,7 @@ namespace TestNamespace
     public void GeneratesLazySingleton()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -206,7 +206,7 @@ namespace TestNamespace
     public void GeneratesGenericSingleton()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -231,7 +231,7 @@ namespace TestNamespace
     public void GeneratesSingletonWithInitializeMethod()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -256,7 +256,7 @@ namespace TestNamespace
     {
         var source = @"
 using System.Collections.Generic;
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -279,7 +279,7 @@ namespace TestNamespace
     public void HandlesMultipleSingletonsInSameFile()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {
@@ -328,7 +328,7 @@ namespace TestNamespace
     public void ReportsGenericConstraintWarning()
     {
         var source = @"
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace TestNamespace
 {

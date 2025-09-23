@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CodeGenerator.Patterns.Mediator;
+namespace Knara.SourceGenerators.DesignPatterns.Mediator;
 
 // CQRS-style Request pattern attributes (EXISTING)
 [AttributeUsage(AttributeTargets.Class)]

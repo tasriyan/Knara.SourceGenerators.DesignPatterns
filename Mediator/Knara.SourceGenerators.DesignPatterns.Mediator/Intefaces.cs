@@ -2,7 +2,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CodeGenerator.Patterns.Mediator;
+namespace Knara.SourceGenerators.DesignPatterns.Mediator;
 
     // CQRS-style interfaces (EXISTING)
     public interface IQuery<out TResponse> { }

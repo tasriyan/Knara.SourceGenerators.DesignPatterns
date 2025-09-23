@@ -1,7 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Data;
 using System.Data.SqlClient;
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace Singleton.UnitTests.UseCases;
 

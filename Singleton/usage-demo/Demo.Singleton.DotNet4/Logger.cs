@@ -1,4 +1,4 @@
-﻿using CodeGenerator.Patterns.Singleton;
+﻿using Knara.SourceGenerators.DesignPatterns.Singleton;
 
 namespace Demo.Singleton.DotNet4
 {

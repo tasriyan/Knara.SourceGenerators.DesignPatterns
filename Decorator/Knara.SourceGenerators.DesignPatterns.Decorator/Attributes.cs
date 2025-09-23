@@ -1,6 +1,6 @@
 using System;
 
-namespace CodeGenerator.Patterns.Decorator;
+namespace Knara.SourceGenerators.DesignPatterns.Decorator;
 
 /// <summary>
 /// Marks an interface for decorator factory generation.

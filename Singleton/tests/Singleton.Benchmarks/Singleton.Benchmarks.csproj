@@ -17,7 +17,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\CodeGenerator.Patterns.Singleton\CodeGenerator.Patterns.Singleton.csproj" />
+      <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatterns.Singleton\Knara.SourceGenerators.DesignPatterns.Singleton.csproj" />
     </ItemGroup>
 
 </Project>

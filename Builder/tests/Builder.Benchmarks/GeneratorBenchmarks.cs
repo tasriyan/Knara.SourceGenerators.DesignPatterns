@@ -1,5 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
-using CodeGenerator.Patterns.Builder;
+using Knara.SourceGenerators.DesignPatters.Builder;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -72,7 +72,7 @@ public class GeneratorBenchmarks
     }
 
     private const string SimpleClassSource = """
-        using CodeGenerator.Patterns.Builder;
+        using Knara.SourceGenerators.DesignPatters.Builder;
 
         [GenerateBuilder]
         public class Person
@@ -85,7 +85,7 @@ public class GeneratorBenchmarks
 
     private const string ComplexClassSource = """
         using System.Collections.Generic;
-        using CodeGenerator.Patterns.Builder;
+        using Knara.SourceGenerators.DesignPatters.Builder;
 
         [GenerateBuilder(GenerateFromMethod = true)]
         public class ComplexOrder
@@ -114,7 +114,7 @@ public class GeneratorBenchmarks
 
     private const string LargeClassSource = """
         using System.Collections.Generic;
-        using CodeGenerator.Patterns.Builder;
+        using Knara.SourceGenerators.DesignPatters.Builder;
 
         [GenerateBuilder(ValidateOnBuild = true, GenerateFromMethod = true)]
         public class LargeConfiguration
@@ -165,7 +165,7 @@ public class GeneratorBenchmarks
 
     private const string MultipleClassesSource = """
         using System.Collections.Generic;
-        using CodeGenerator.Patterns.Builder;
+        using Knara.SourceGenerators.DesignPatters.Builder;
 
         [GenerateBuilder]
         public class User

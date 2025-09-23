@@ -6,7 +6,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
-namespace CodeGenerator.Patterns.Singleton;
+namespace Knara.SourceGenerators.DesignPatterns.Singleton;
 
 [Generator]
 public class SingletonPatternGenerator : IIncrementalGenerator
@@ -14,7 +14,7 @@ public class SingletonPatternGenerator : IIncrementalGenerator
     private const string SingletonAttribute = @"
 using System;
 
-namespace CodeGenerator.Patterns.Singleton
+namespace Knara.SourceGenerators.DesignPatterns.Singleton
 {
     public enum SingletonStrategy
     {

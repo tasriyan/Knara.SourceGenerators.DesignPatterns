@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using CodeGenerator.Patterns.Decorator;
+using Knara.SourceGenerators.DesignPatterns.Decorator;
 
 namespace Demo.Decorator.DotNet4
 {

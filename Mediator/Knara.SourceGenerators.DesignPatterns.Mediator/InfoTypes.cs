@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace CodeGenerator.Patterns.Mediator;
+namespace Knara.SourceGenerators.DesignPatterns.Mediator;
 
 public enum HandlerType
 {

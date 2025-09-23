@@ -1,5 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -87,7 +87,7 @@ public class SingletonGeneratorBenchmarks
     }
 
     private const string SimpleClassSource = """
-        using CodeGenerator.Patterns.Singleton;
+        using Knara.SourceGenerators.DesignPatterns.Singleton;
 
         [Singleton]
         public partial class SimpleLogger
@@ -103,7 +103,7 @@ public class SingletonGeneratorBenchmarks
 
     private const string ComplexClassSource = """
         using System.Collections.Concurrent;
-        using CodeGenerator.Patterns.Singleton;
+        using Knara.SourceGenerators.DesignPatterns.Singleton;
 
         [Singleton(Strategy = SingletonStrategy.LockFree, UseFactory = true, FactoryMethodName = "CreateInstance")]
         public partial class ComplexCacheManager
@@ -140,7 +140,7 @@ public class SingletonGeneratorBenchmarks
         """;
 
     private const string GenericClassSource = """
-        using CodeGenerator.Patterns.Singleton;
+        using Knara.SourceGenerators.DesignPatterns.Singleton;
 
         [Singleton(Strategy = SingletonStrategy.DoubleCheckedLocking)]
         public partial class GenericRepository<T, TKey> 
@@ -160,7 +160,7 @@ public class SingletonGeneratorBenchmarks
         """;
 
     private const string MultipleClassesSource = """
-        using CodeGenerator.Patterns.Singleton;
+        using Knara.SourceGenerators.DesignPatterns.Singleton;
 
         [Singleton(Strategy = SingletonStrategy.Lazy)]
         public partial class ConfigManager
@@ -188,7 +188,7 @@ public class SingletonGeneratorBenchmarks
         """;
 
     private const string AllStrategiesSource = """
-        using CodeGenerator.Patterns.Singleton;
+        using Knara.SourceGenerators.DesignPatterns.Singleton;
 
         [Singleton(Strategy = SingletonStrategy.Lazy)]
         public partial class LazyService
@@ -216,7 +216,7 @@ public class SingletonGeneratorBenchmarks
         """;
 
     private const string DIRegistrationSource = """
-        using CodeGenerator.Patterns.Singleton;
+        using Knara.SourceGenerators.DesignPatterns.Singleton;
 
         [Singleton(RegisterInDI = true)]
         public partial class DIService

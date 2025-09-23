@@ -1,5 +1,5 @@
 ﻿using System.Runtime.CompilerServices;
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures.Core;
 
 namespace Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures;

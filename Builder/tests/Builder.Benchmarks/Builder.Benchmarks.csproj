@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\CodeGenerator.Patterns.Builder\CodeGenerator.Patterns.Builder.csproj" />
+      <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatters.Builder\Knara.SourceGenerators.DesignPatters.Builder.csproj" />
     </ItemGroup>
 
 </Project>

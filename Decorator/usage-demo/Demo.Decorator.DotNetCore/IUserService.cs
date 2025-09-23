@@ -1,4 +1,4 @@
-﻿using CodeGenerator.Patterns.Decorator;
+﻿using Knara.SourceGenerators.DesignPatterns.Decorator;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

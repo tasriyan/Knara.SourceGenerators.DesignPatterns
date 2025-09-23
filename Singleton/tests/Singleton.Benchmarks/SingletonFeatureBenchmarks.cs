@@ -1,5 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
-using CodeGenerator.Patterns.Singleton;
+using Knara.SourceGenerators.DesignPatterns.Singleton;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -50,7 +50,7 @@ public class SingletonFeatureBenchmarks
     private static string GenerateSourceWithAllProperties()
     {
         return """
-            using CodeGenerator.Patterns.Singleton;
+            using Knara.SourceGenerators.DesignPatterns.Singleton;
 
             [Singleton(Strategy = SingletonStrategy.LockFree, RegisterInDI = true, UseFactory = true)]
             public partial class TestService
@@ -64,7 +64,7 @@ public class SingletonFeatureBenchmarks
     private static string GenerateGenericSource()
     {
         return """
-            using CodeGenerator.Patterns.Singleton;
+            using Knara.SourceGenerators.DesignPatterns.Singleton;
 
             [Singleton]
             public partial class TestService<T> where T : class, new()
@@ -77,7 +77,7 @@ public class SingletonFeatureBenchmarks
     private static string GenerateFactorySource()
     {
         return """
-            using CodeGenerator.Patterns.Singleton;
+            using Knara.SourceGenerators.DesignPatterns.Singleton;
 
             [Singleton(UseFactory = true, FactoryMethodName = "Create")]
             public partial class TestService

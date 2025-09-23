@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using CodeGenerator.Patterns.Mediator;
+using Knara.SourceGenerators.DesignPatterns.Mediator;
 using Demo.Mediator.DotNetCore;
 using Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures;
 using Demo.Mediator.DotNetCore.VerticalSlices.UserFeatures.Core;

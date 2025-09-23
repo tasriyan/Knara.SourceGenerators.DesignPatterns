@@ -16,6 +16,8 @@
         </PackageReference>
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
         <PackageReference Include="Microsoft.CodeAnalysis.Analyzer.Testing" Version="1.1.2" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
         <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
         <PackageReference Include="System.Formats.Asn1" Version="9.0.8" />
         <PackageReference Include="xunit" Version="2.9.3" />
@@ -34,7 +36,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\CodeGenerator.Patterns.Mediator\CodeGenerator.Patterns.Mediator.csproj" />
+      <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatterns.Mediator\Knara.SourceGenerators.DesignPatterns.Mediator.csproj" />
     </ItemGroup>
 
 </Project>

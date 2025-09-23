@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CodeGenerator.Patterns.Singleton;
+namespace Knara.SourceGenerators.DesignPatterns.Singleton;
 
 [AttributeUsage(AttributeTargets.Class)]
 public class SingletonAttribute : Attribute

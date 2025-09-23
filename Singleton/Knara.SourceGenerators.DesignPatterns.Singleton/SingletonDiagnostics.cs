@@ -1,6 +1,6 @@
 using Microsoft.CodeAnalysis;
 
-namespace CodeGenerator.Patterns.Singleton;
+namespace Knara.SourceGenerators.DesignPatterns.Singleton;
 
 public class DiagnosticInfo
 {
