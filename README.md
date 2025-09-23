@@ -1,8 +1,5 @@
 [![Build and Test](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/build.yml/badge.svg)](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/build.yml)
-[![NuGet](https://img.shields.io/nuget/vpre/Knara.SourceGenerators.Mediator?label=Knara.SourceGenerators.Mediator&style=flat&logo=nuget)](https://www.nuget.org/packages/Knara.SourceGenerators.Mediator/)
-[![NuGet](https://img.shields.io/nuget/vpre/Knara.SourceGenerators.Singleton?label=Knara.SourceGenerators.Singleton&style=flat&logo=nuget)](https://www.nuget.org/packages/Knara.SourceGenerators.Singleton/)
-[![NuGet](https://img.shields.io/nuget/vpre/Knara.SourceGenerators.Builder?label=Knara.SourceGenerators.Builder&style=flat&logo=nuget)](https://www.nuget.org/packages/Knara.SourceGenerators.Builder/)
-[![NuGet](https://img.shields.io/nuget/vpre/Knara.SourceGenerators.Decorator?label=Knara.SourceGenerators.Decorator&style=flat&logo=nuget)](https://www.nuget.org/packages/Knara.SourceGenerators.Decorator/)
+[![Publish NuGet Packages](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/publish.yml/badge.svg)](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/publish.yml)
 [![Framework](https://img.shields.io/badge/.NET-Standard%202.0%20%7C%20.NET%209.0-blue)](https://dotnet.microsoft.com/)
 [![Language](https://img.shields.io/badge/language-C%23-239120.svg)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 # Legacy Modernization Code Generators
