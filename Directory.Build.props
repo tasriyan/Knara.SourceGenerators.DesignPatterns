@@ -1,6 +1,6 @@
 ﻿<Project>
     <PropertyGroup>
-        <Version>1.0.1</Version>
+        <Version>1.0.2</Version>
         <Authors>Tatyana Asriyan</Authors>
         <PackageProjectUrl>https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns</PackageProjectUrl>
         <RepositoryUrl>https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns</RepositoryUrl>
@@ -8,5 +8,10 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageTags>source generators;design patterns;builder;decorator;mediator;singleton</PackageTags>
         <IsPackable>false</IsPackable>
+        <PackageIcon>knara.png</PackageIcon>
     </PropertyGroup>
+
+    <ItemGroup>
+        <None Include="knara.png" Pack="true" PackagePath="\" />
+    </ItemGroup>
 </Project>
