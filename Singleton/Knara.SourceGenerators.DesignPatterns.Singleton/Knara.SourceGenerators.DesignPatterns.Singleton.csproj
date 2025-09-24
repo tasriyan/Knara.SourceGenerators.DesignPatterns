@@ -7,8 +7,6 @@
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <IsRoslynComponent>true</IsRoslynComponent>
         <IsPackable>true</IsPackable>
-        <PackageProjectUrl>https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns</RepositoryUrl>
         <Description>A source generator that creates thread-safe singleton implementations for .NET Framework applications.</Description>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>

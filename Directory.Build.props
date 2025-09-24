@@ -2,7 +2,7 @@
     <PropertyGroup>
         <Version>1.0.1</Version>
         <Authors>Tatyana Asriyan</Authors>
-        <PackageProjectUrl>https://www.nuget.org/tasriyan/Knara.SourceGenerators.DesignPatterns</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns</PackageProjectUrl>
         <RepositoryUrl>https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

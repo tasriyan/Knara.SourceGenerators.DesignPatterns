@@ -7,8 +7,6 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsRoslynComponent>true</IsRoslynComponent>
     <IsPackable>true</IsPackable>
-    <PackageProjectUrl>https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns</RepositoryUrl>
     <Description>A source generator that retrofits existing services with the mediator pattern using declarative attributes. </Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
