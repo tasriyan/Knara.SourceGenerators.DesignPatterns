@@ -1,4 +1,10 @@
 # Decorator Factory Generator
+[![Build and Test](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/build.yml/badge.svg)](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/build.yml)
+[![Publish NuGet Packages](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/publish.yml/badge.svg)](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/publish.yml)
+[![NuGet](https://img.shields.io/nuget/v/Knara.SourceGenerators.DesignPatterns.Decorator.svg)](https://www.nuget.org/packages/Knara.SourceGenerators.DesignPatterns.Decorator/)
+[![NuGet](https://img.shields.io/nuget/dt/Knara.SourceGenerators.DesignPatterns.Decorator.svg)](https://www.nuget.org/packages/Knara.SourceGenerators.DesignPatterns.Decorator/)
+![.NET Standard 2.0](https://img.shields.io/badge/.NET_Standard-2.0-blue.svg?logo=dotnet&labelColor=512BD4)
+[![Language](https://img.shields.io/badge/language-C%23-239120.svg)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 
 A C# source generator that automatically creates fluent factory methods for the Decorator design pattern.
 

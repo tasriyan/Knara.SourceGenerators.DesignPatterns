@@ -1,8 +1,8 @@
+# Legacy Modernization Code Generators
 [![Build and Test](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/build.yml/badge.svg)](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/build.yml)
 [![Publish NuGet Packages](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/publish.yml/badge.svg)](https://github.com/tasriyan/Knara.SourceGenerators.DesignPatterns/actions/workflows/publish.yml)
 [![Framework](https://img.shields.io/badge/.NET-Standard%202.0%20%7C%20.NET%209.0-blue)](https://dotnet.microsoft.com/)
 [![Language](https://img.shields.io/badge/language-C%23-239120.svg)](https://docs.microsoft.com/en-us/dotnet/csharp/)
-# Legacy Modernization Code Generators
 
 A collection of C# source generators designed to introduce modern design patterns and practices to legacy .NET Framework applications. These generators automatically create boilerplate code for common patterns, enabling teams to adopt proven architectural practices without requiring deep expertise in their implementation.
 
