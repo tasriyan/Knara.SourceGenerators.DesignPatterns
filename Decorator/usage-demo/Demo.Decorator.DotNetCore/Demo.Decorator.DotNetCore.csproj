@@ -7,7 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-    <CompilerGeneratedFilesOutputPath>Generated\$(TargetFramework)</CompilerGeneratedFilesOutputPath>
+    <CompilerGeneratedFilesOutputPath>gen</CompilerGeneratedFilesOutputPath>
+    <EnableLongPaths>true</EnableLongPaths>
     <RootNamespace>Demo.Decorator.DotNetCore</RootNamespace>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
@@ -18,15 +19,15 @@
 
 
   <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.8" />
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
-      <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
-      <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.8" />
-    </ItemGroup>
-  
-    <ItemGroup>
-      <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatterns.Decorator\Knara.SourceGenerators.DesignPatterns.Decorator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    </ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Knara.SourceGenerators.DesignPatterns.Decorator\Knara.SourceGenerators.DesignPatterns.Decorator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
 
 </Project>

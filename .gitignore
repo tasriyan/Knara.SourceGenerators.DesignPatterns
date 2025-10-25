@@ -4,3 +4,13 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 Generated/
+/.vs
+/.idea
+/Singleton/usage-demo/Demo.Singleton.DotNetCore/gen
+/Singleton/usage-demo/Demo.Singleton.DotNet4/gen
+/Mediator/usage-demo/Demo.Mediator.DotNetCore/gen
+/Mediator/usage-demo/Demo.Mediator.DotNet4/gen
+/Decorator/usage-demo/Demo.Decorator.DotNetCore/gen
+/Decorator/usage-demo/Demo.Decorator.DotNet4/gen
+/Builder/usage-demo/Demo.Builder.DotNetCore/gen
+/Builder/usage-demo/Demo.Builder.DotNet4/gen
